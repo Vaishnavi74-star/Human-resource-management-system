@@ -5,13 +5,14 @@ Every workday, perfectly aligned.
 DAYFLOW is a modern Human Resource Management System (HRMS) designed to bring employees, attendance, leave, payroll, documents, notifications, and HR operations together in one connected platform.
 
 📸 Project Preview
+<img width="1905" height="888" alt="image" src="https://github.com/user-attachments/assets/149a4078-e4cf-4342-ae47-8a38fea5dba8" />
 
-<!--
-Add your screenshots inside a folder named `screenshots`
-and replace the filenames below.
+
+<img width="1906" height="963" alt="image" src="https://github.com/user-attachments/assets/daf15e0c-bdc1-4e9d-8dd8-eb230b15b412" />
+
 
 Example:
-![DAYFLOW Dashboard](screenshots/dashboard.png)
+
 -->
 
 🖥️ Dashboard
