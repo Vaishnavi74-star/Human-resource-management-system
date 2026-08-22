@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Download, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { MOCK_USERS_DB } from '../../data/mockUser';
 import { leaveService } from '../../services/leaveService';
-import { attendanceService } from '../../services/attendanceService';
 import { payrollService } from '../../services/payrollService';
 import { downloadCSV } from '../../utils/csvExport';
 
@@ -185,7 +184,7 @@ export const AdminReportsPage: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {pieData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -214,7 +213,7 @@ export const AdminReportsPage: React.FC = () => {
                       <td className="px-6 py-4 text-slate-500">{row.startDate} to {row.endDate}</td>
                       <td className="px-6 py-4">
                         <Badge 
-                          variant={row.status === 'Approved' ? 'success' : row.status === 'Pending' ? 'warning' : 'danger'}
+                          variant={row.status === 'Approved' ? 'success' : row.status === 'Pending' ? 'warning' : 'error'}
                           size="sm"
                         >
                           {row.status}

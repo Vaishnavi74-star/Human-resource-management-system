@@ -39,7 +39,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLFormElement>(null);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -83,7 +83,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.trim().length >= 2) {
         setIsSearching(true);
-        const results = await searchService.globalSearch(searchQuery, role);
+        const results = await searchService.globalSearch(searchQuery, role || undefined);
         setSearchResults(results);
         setIsSearching(false);
         setIsSearchOpen(true);

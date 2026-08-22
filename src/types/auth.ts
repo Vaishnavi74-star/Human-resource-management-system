@@ -1,6 +1,8 @@
 import type { UserProfile } from './user';
 import type { UserRole } from '../utils/constants';
 
+export type { UserRole };
+
 export interface LoginCredentials {
   email: string;
   password: string;

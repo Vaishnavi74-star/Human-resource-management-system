@@ -32,7 +32,6 @@ import {
 import { EmptyState } from '../components/ui/EmptyState';
 import { Card } from '../components/ui/Card';
 import {
-  Building2,
   LifeBuoy,
 } from 'lucide-react';
 
@@ -184,6 +183,14 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/admin/reports"
+          element={
+            <AdminRoute>
+              <AdminReportsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
           path="/admin/employees"
           element={
             <AdminRoute>
@@ -207,24 +214,6 @@ export const AppRoutes: React.FC = () => {
         {/* Shared System Pages */}
         <Route path="/settings" element={<SettingsPage />} />
         {/* Role-Protected Business Module Placeholders */}
-        <Route
-          path="/organization"
-          element={
-            <PagePlaceholder
-              title="Organization Structure"
-              subtitle="Departmental hierarchy and reporting line visualization."
-              icon={<Building2 className="w-7 h-7 text-indigo-600" />}
-            />
-          }
-        />
-        <Route
-          path="/admin/reports"
-          element={
-            <AdminRoute>
-              <AdminReportsPage />
-            </AdminRoute>
-          }
-        />
         <Route
           path="/admin/payroll"
           element={

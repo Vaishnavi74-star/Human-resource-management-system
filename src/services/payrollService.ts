@@ -92,6 +92,10 @@ export const payrollService = {
     return new Promise((resolve) => setTimeout(() => resolve(MOCK_PAYROLL_DATA), 500));
   },
 
+  async getAllEmployeePayrolls(): Promise<EmployeePayroll[]> {
+    return this.getAllEmployeeSalaries();
+  },
+
   async getPayrollSummary(): Promise<PayrollSummary> {
     const summary = MOCK_PAYROLL_DATA.reduce((acc, curr) => {
       acc.totalEmployees += 1;
