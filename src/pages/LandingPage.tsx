@@ -51,12 +51,9 @@ export const LandingPage: React.FC = () => {
             <a href="#roles" className="hover:text-indigo-600 transition-colors">
               Role Portals
             </a>
-            <Link to="/architecture" className="hover:text-indigo-600 transition-colors">
-              Architecture
-            </Link>
-            <Link to="/components" className="hover:text-indigo-600 transition-colors">
-              UI System (12 Blocks)
-            </Link>
+            <a href="#preview" className="hover:text-indigo-600 transition-colors">
+              Workspace Experience
+            </a>
           </nav>
 
           {/* Auth Actions */}
@@ -427,12 +424,12 @@ export const LandingPage: React.FC = () => {
           </p>
 
           <div className="flex items-center gap-6 text-xs text-slate-600 font-medium">
-            <Link to="/architecture" className="hover:text-indigo-600">
-              Architecture
-            </Link>
-            <Link to="/components" className="hover:text-indigo-600">
-              Component Showcase
-            </Link>
+            <a href="#features" className="hover:text-indigo-600">
+              Features
+            </a>
+            <a href="#roles" className="hover:text-indigo-600">
+              Role Portals
+            </a>
             <Link to="/login" className="hover:text-indigo-600">
               Sign In
             </Link>

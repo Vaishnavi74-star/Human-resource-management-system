@@ -16,8 +16,6 @@ import {
   AdminEmployeesPage,
   AdminEmployeeDetailPage,
   LeaveCalendarPage,
-  ComponentShowcasePage,
-  FoundationOverviewPage,
   EmployeeSalaryPage,
   AdminPayrollPage,
   EmployeeDocumentsPage,
@@ -204,10 +202,6 @@ export const AppRoutes: React.FC = () => {
           path="/employees"
           element={<Navigate to="/admin/employees" replace />}
         />
-
-        {/* Shared System Pages */}
-        <Route path="/architecture" element={<FoundationOverviewPage />} />
-        <Route path="/components" element={<ComponentShowcasePage />} />
 
         {/* Role-Protected Business Module Placeholders */}
         <Route
