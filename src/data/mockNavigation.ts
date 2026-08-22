@@ -16,10 +16,18 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
     title: 'OVERVIEW',
     items: [
       {
-        id: 'dashboard',
-        label: 'Dashboard',
-        path: '/',
+        id: 'admin-dashboard',
+        label: 'Admin Dashboard',
+        path: '/admin/dashboard',
         icon: LayoutDashboard,
+        requiredRole: ['admin', 'hr'],
+      },
+      {
+        id: 'employee-dashboard',
+        label: 'My Workspace',
+        path: '/employee/dashboard',
+        icon: LayoutDashboard,
+        requiredRole: ['employee'],
       },
       {
         id: 'foundation',

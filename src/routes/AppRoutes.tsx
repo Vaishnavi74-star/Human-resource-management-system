@@ -1,12 +1,32 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { AppShell } from '../layouts/AppShell';
-import { DashboardPage } from '../pages/DashboardPage';
-import { ComponentShowcasePage } from '../pages/ComponentShowcasePage';
-import { FoundationOverviewPage } from '../pages/FoundationOverviewPage';
+import {
+  LoginPage,
+  SignupPage,
+  VerifyEmailPage,
+  EmployeeDashboardPage,
+  AdminDashboardPage,
+  ComponentShowcasePage,
+  FoundationOverviewPage,
+} from '../pages';
+import {
+  ProtectedRoute,
+  EmployeeRoute,
+  AdminRoute,
+  PublicOnlyRoute,
+} from './guards';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Card } from '../components/ui/Card';
-import { Users, CalendarCheck, Building2, CreditCard, FileBadge, LifeBuoy } from 'lucide-react';
+import {
+  Users,
+  CalendarCheck,
+  Building2,
+  CreditCard,
+  FileBadge,
+  LifeBuoy,
+} from 'lucide-react';
 
 const PagePlaceholder: React.FC<{
   title: string;
@@ -25,7 +45,7 @@ const PagePlaceholder: React.FC<{
       <EmptyState
         icon={icon}
         title={`${title} Module`}
-        description="Foundation and architecture are ready. Business domain logic and interactive tables will be attached in the upcoming development phase."
+        description="Foundation and authentication architecture are active. Business domain logic will connect here."
         actionLabel="Back to Dashboard"
         onAction={() => {
           window.location.href = '/';
@@ -35,24 +55,87 @@ const PagePlaceholder: React.FC<{
   </div>
 );
 
+// Intelligent root redirect based on authenticated role
+const RootRedirect: React.FC = () => {
+  const { isAuthenticated, role } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role === 'admin' || role === 'hr') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return <Navigate to="/employee/dashboard" replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route element={<AppShell />}>
-        {/* Main Routes */}
-        <Route path="/" element={<DashboardPage />} />
+      {/* Public Auth Routes (Guest Only) */}
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <LoginPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicOnlyRoute>
+            <SignupPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+      {/* Root Path Dispatcher */}
+      <Route path="/" element={<RootRedirect />} />
+
+      {/* Protected Workplace Routes with Global AppShell */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        }
+      >
+        {/* Role-Specific Dashboards */}
+        <Route
+          path="/employee/dashboard"
+          element={
+            <EmployeeRoute>
+              <EmployeeDashboardPage />
+            </EmployeeRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
+          }
+        />
+
+        {/* Shared System Pages */}
         <Route path="/architecture" element={<FoundationOverviewPage />} />
         <Route path="/components" element={<ComponentShowcasePage />} />
 
-        {/* Future Business Module Route Placeholders */}
+        {/* Role-Protected Business Module Placeholders */}
         <Route
           path="/employees"
           element={
-            <PagePlaceholder
-              title="Employee Directory"
-              subtitle="Staff profiles, organizational hierarchy, and team assignments."
-              icon={<Users className="w-7 h-7 text-indigo-600" />}
-            />
+            <AdminRoute>
+              <PagePlaceholder
+                title="Employee Directory"
+                subtitle="Staff profiles, organizational hierarchy, and team assignments."
+                icon={<Users className="w-7 h-7 text-indigo-600" />}
+              />
+            </AdminRoute>
           }
         />
         <Route
@@ -78,11 +161,13 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/payroll"
           element={
-            <PagePlaceholder
-              title="Payroll & Compensation"
-              subtitle="Salary disbursements, tax withholdings, and benefits overview."
-              icon={<CreditCard className="w-7 h-7 text-indigo-600" />}
-            />
+            <AdminRoute>
+              <PagePlaceholder
+                title="Payroll & Compensation"
+                subtitle="Salary disbursements, tax withholdings, and benefits overview."
+                icon={<CreditCard className="w-7 h-7 text-indigo-600" />}
+              />
+            </AdminRoute>
           }
         />
         <Route
@@ -106,7 +191,7 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
-        {/* Catch-all redirect to dashboard */}
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

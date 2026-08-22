@@ -50,11 +50,11 @@ export const DashboardPage: React.FC = () => {
               <span>Foundation Architecture Active</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
-              Welcome back, {user.name.split(' ')[0]} 👋
+              Welcome back, {user?.name ? user.name.split(' ')[0] : 'User'} 👋
             </h1>
             <p className="text-sm text-indigo-100/90 leading-relaxed">
               Every workday, perfectly aligned. You are currently viewing the system in{' '}
-              <strong className="text-white underline underline-offset-2">{role.toUpperCase()}</strong>{' '}
+              <strong className="text-white underline underline-offset-2">{role ? role.toUpperCase() : 'USER'}</strong>{' '}
               mode.
             </p>
           </div>

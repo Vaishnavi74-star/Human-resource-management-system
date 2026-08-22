@@ -14,7 +14,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
 
   return (
     <>
@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Brand Header */}
         <div className="h-18 px-6 flex items-center justify-between border-b border-slate-100 shrink-0">
           <Logo size="md" showTagline={false} />
-          
+
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 lg:hidden"
@@ -50,9 +50,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Navigation Sections */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
           {NAVIGATION_SECTIONS.map((section) => {
-            // Filter items based on user role permissions
+            // Filter items based on active user role
             const visibleItems = section.items.filter(
-              (item) => !item.requiredRole || item.requiredRole.includes(role)
+              (item) => !item.requiredRole || (role && item.requiredRole.includes(role))
             );
 
             if (visibleItems.length === 0) return null;
@@ -123,10 +123,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Workspace</p>
-              <p className="text-xs font-bold text-slate-800 truncate">Dayflow Enterprise</p>
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                {user?.role === 'admin' ? 'HR Console' : 'Employee Portal'}
+              </p>
+              <p className="text-xs font-bold text-slate-800 truncate">
+                {user?.name || 'Dayflow Workplace'}
+              </p>
             </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="System Operational" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Session Connected" />
           </div>
         </div>
       </aside>
