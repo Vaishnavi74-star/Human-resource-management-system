@@ -210,11 +210,12 @@ export const SettingsPage: React.FC = () => {
             <Select 
               value={preferencesData.language}
               onChange={(e) => setPreferencesData({...preferencesData, language: e.target.value})}
-            >
-              <option value="en">English (US)</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-            </Select>
+              options={[
+                { value: 'en', label: 'English (US)' },
+                { value: 'es', label: 'Español' },
+                { value: 'fr', label: 'Français' }
+              ]}
+            />
           </div>
 
           {/* Notifications */}
