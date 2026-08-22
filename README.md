@@ -4,34 +4,20 @@ Every workday, perfectly aligned.
 
 DAYFLOW is a modern Human Resource Management System (HRMS) designed to bring employees, attendance, leave, payroll, documents, notifications, and HR operations together in one connected platform.
 
-📸 Project Preview
-<img width="1905" height="888" alt="image" src="https://github.com/user-attachments/assets/149a4078-e4cf-4342-ae47-8a38fea5dba8" />
 
-
-<img width="1906" height="963" alt="image" src="https://github.com/user-attachments/assets/daf15e0c-bdc1-4e9d-8dd8-eb230b15b412" />
-
-
-Example:
-
--->
 
 🖥️ Dashboard
 
-<p align="center">
-  <img src="screenshots/dashboard.png" alt="DAYFLOW Dashboard" width="90%">
-</p>
+<img width="1905" height="888" alt="image" src="https://github.com/user-attachments/assets/149a4078-e4cf-4342-ae47-8a38fea5dba8" />
 
 👤 Employee Module
 
-<p align="center">
-  <img src="screenshots/employee.png" alt="DAYFLOW Employee Module" width="90%">
-</p>
+<img width="1917" height="909" alt="image" src="https://github.com/user-attachments/assets/26a10a98-5a16-48b8-8674-a863b2a62874" />
+
 
 🧑‍💼 HR / Admin Module
 
-<p align="center">
-  <img src="screenshots/admin.png" alt="DAYFLOW HR Admin Module" width="90%">
-</p>
+<img width="1906" height="963" alt="image" src="https://github.com/user-attachments/assets/daf15e0c-bdc1-4e9d-8dd8-eb230b15b412" />
 
 💡 Add your real screenshots here.
 Create a screenshots folder in the project and place your images inside it.
