@@ -29,38 +29,6 @@ import {
   AdminRoute,
   PublicOnlyRoute,
 } from './guards';
-import { EmptyState } from '../components/ui/EmptyState';
-import { Card } from '../components/ui/Card';
-import {
-  LifeBuoy,
-} from 'lucide-react';
-
-const PagePlaceholder: React.FC<{
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-}> = ({ title, subtitle, icon }) => (
-  <div className="space-y-6">
-    <div>
-      <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
-        {title}
-      </h1>
-      <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
-    </div>
-
-    <Card>
-      <EmptyState
-        icon={icon}
-        title={`${title} Module`}
-        description="Foundation and authentication architecture are active. Business domain logic will connect here."
-        actionLabel="Back to Dashboard"
-        onAction={() => {
-          window.location.href = '/';
-        }}
-      />
-    </Card>
-  </div>
-);
 
 // Intelligent root redirect: shows Landing page if guest, or user dashboard if logged in
 const RootDispatcher: React.FC = () => {
@@ -111,9 +79,10 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        {/* Shared Calendar Route */}
+        {/* Shared Calendar & Settings Routes */}
         <Route path="/calendar" element={<LeaveCalendarPage />} />
         <Route path="/leave/calendar" element={<LeaveCalendarPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
 
         {/* Employee Role Routes */}
         <Route
@@ -211,9 +180,7 @@ export const AppRoutes: React.FC = () => {
           element={<Navigate to="/admin/employees" replace />}
         />
 
-        {/* Shared System Pages */}
-        <Route path="/settings" element={<SettingsPage />} />
-        {/* Role-Protected Business Module Placeholders */}
+        {/* Role-Protected Business Modules */}
         <Route
           path="/admin/payroll"
           element={
@@ -228,16 +195,6 @@ export const AppRoutes: React.FC = () => {
             <AdminRoute>
               <AdminDocumentsPage />
             </AdminRoute>
-          }
-        />
-        <Route
-          path="/help"
-          element={
-            <PagePlaceholder
-              title="Help & Knowledge Base"
-              subtitle="User guides, HR policies, and ticket submission."
-              icon={<LifeBuoy className="w-7 h-7 text-indigo-600" />}
-            />
           }
         />
 

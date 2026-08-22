@@ -5,7 +5,6 @@ import {
   CalendarCheck,
   CreditCard,
   FileBadge,
-  LifeBuoy,
   Plane,
   Calendar,
   BarChart3,
@@ -125,19 +124,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'SUPPORT & SETTINGS',
+    title: 'SETTINGS',
     items: [
       {
         id: 'settings',
         label: 'Settings & Preferences',
         path: '/settings',
         icon: Settings,
-      },
-      {
-        id: 'help',
-        label: 'Help & Knowledge Base',
-        path: '/help',
-        icon: LifeBuoy,
       },
     ],
   },
