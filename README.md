@@ -721,6 +721,10 @@ This project was created as a hackathon project.
 
 ---
 
+# Author
+VAISHNAVI DESHPANDE
+DEEPA MS
+
 ## 👩‍💻 Team
 
 Built with ❤️ by the DAYFLOW team.
