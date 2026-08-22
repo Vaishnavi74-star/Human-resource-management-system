@@ -79,12 +79,12 @@ let MOCK_PAYROLL_DATA: EmployeePayroll[] = [
 ];
 
 export const payrollService = {
-  async getEmployeeSalary(employeeId: string): Promise<SalaryStructure> {
+  async getEmployeeSalary(_employeeId: string): Promise<SalaryStructure> {
     // In a real app, fetch from API. We return mock data here.
     return new Promise((resolve) => setTimeout(() => resolve(MOCK_SALARY_STRUCTURE), 400));
   },
 
-  async getSalaryHistory(employeeId: string): Promise<SalaryHistory[]> {
+  async getSalaryHistory(_employeeId: string): Promise<SalaryHistory[]> {
     return new Promise((resolve) => setTimeout(() => resolve(MOCK_SALARY_HISTORY), 400));
   },
 

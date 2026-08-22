@@ -33,8 +33,6 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Card } from '../components/ui/Card';
 import {
   Building2,
-  CreditCard,
-  FileBadge,
   LifeBuoy,
 } from 'lucide-react';
 

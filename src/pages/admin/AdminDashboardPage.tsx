@@ -3,7 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { useDisclosure } from '../../hooks/useDisclosure';
 import { leaveService } from '../../services/leaveService';
-import { attendanceService } from '../../services/attendanceService';
 import { notificationService } from '../../services/notificationService';
 import type { LeaveRequest, LeaveStatus, LeaveType } from '../../types/leave';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
