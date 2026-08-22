@@ -111,9 +111,16 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
     title: 'OPERATIONS & FINANCE',
     items: [
       {
+        id: 'employee-salary',
+        label: 'My Salary & Payslips',
+        path: '/employee/salary',
+        icon: CreditCard,
+        requiredRole: ['employee'],
+      },
+      {
         id: 'payroll',
         label: 'Payroll & Benefits',
-        path: '/payroll',
+        path: '/admin/payroll',
         icon: CreditCard,
         requiredRole: ['admin', 'hr'],
       },

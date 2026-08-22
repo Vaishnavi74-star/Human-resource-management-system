@@ -18,6 +18,8 @@ import {
   LeaveCalendarPage,
   ComponentShowcasePage,
   FoundationOverviewPage,
+  EmployeeSalaryPage,
+  AdminPayrollPage,
 } from '../pages';
 import {
   ProtectedRoute,
@@ -139,6 +141,14 @@ export const AppRoutes: React.FC = () => {
             </EmployeeRoute>
           }
         />
+        <Route
+          path="/employee/salary"
+          element={
+            <EmployeeRoute>
+              <EmployeeSalaryPage />
+            </EmployeeRoute>
+          }
+        />
 
         {/* HR / Admin Role Routes */}
         <Route
@@ -202,14 +212,10 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/payroll"
+          path="/admin/payroll"
           element={
             <AdminRoute>
-              <PagePlaceholder
-                title="Payroll & Compensation"
-                subtitle="Salary disbursements, tax withholdings, and benefits overview."
-                icon={<CreditCard className="w-7 h-7 text-indigo-600" />}
-              />
+              <AdminPayrollPage />
             </AdminRoute>
           }
         />
