@@ -5,6 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { notificationService } from '../services/notificationService';
+import { searchService, type SearchResult } from '../services/searchService';
 import type { AppNotification } from '../types/notification';
 import {
   Menu,
@@ -38,8 +39,12 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     // Subscribe to notifications tailored for this user
@@ -65,16 +70,34 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
       if (helpRef.current && !helpRef.current.contains(e.target as Node)) {
         setIsHelpOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Perform global search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        const results = await searchService.globalSearch(searchQuery, role);
+        setSearchResults(results);
+        setIsSearching(false);
+        setIsSearchOpen(true);
+      } else {
+        setSearchResults([]);
+        setIsSearchOpen(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, role]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      info(`Searching: "${searchQuery}"`, 'HRMS search indexing across employees, policies, and timesheets.');
-    }
   };
 
   const handleLogout = () => {
@@ -97,18 +120,68 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
         </button>
 
         {/* Global Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md hidden sm:block">
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md hidden sm:block" ref={searchRef}>
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search employees, departments, policies (Ctrl + K)..."
+            onFocus={() => { if (searchQuery.trim().length >= 2) setIsSearchOpen(true); }}
+            placeholder="Search employees, departments, leave (Ctrl + K)..."
             className="w-full bg-slate-50/90 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 rounded-xl pl-9 pr-12 py-2 transition-all focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
           />
           <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 rounded shadow-3xs pointer-events-none">
             ⌘K
           </kbd>
+
+          {/* Search Dropdown */}
+          {isSearchOpen && (
+            <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-96 overflow-y-auto z-50">
+              {isSearching ? (
+                <div className="p-4 text-center text-xs text-slate-500">Searching...</div>
+              ) : searchResults.length > 0 ? (
+                <div className="py-2">
+                  {/* Grouped Results */}
+                  {['employee', 'leave_request', 'department'].map((type) => {
+                    const typedResults = searchResults.filter(r => r.type === type);
+                    if (typedResults.length === 0) return null;
+                    
+                    const typeLabels = {
+                      'employee': 'Employees',
+                      'leave_request': 'Leave Requests',
+                      'department': 'Departments'
+                    };
+
+                    return (
+                      <div key={type} className="mb-2">
+                        <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50">
+                          {typeLabels[type as keyof typeof typeLabels]}
+                        </div>
+                        {typedResults.map(result => (
+                          <button
+                            key={result.id}
+                            className="w-full text-left px-4 py-2 hover:bg-slate-50 focus:bg-slate-50 outline-none transition-colors"
+                            onClick={() => {
+                              if (result.link !== '#') {
+                                navigate(result.link);
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                              }
+                            }}
+                          >
+                            <div className="text-xs font-semibold text-slate-900">{result.title}</div>
+                            {result.subtitle && <div className="text-[11px] text-slate-500">{result.subtitle}</div>}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-xs text-slate-500">No results found for "{searchQuery}"</div>
+              )}
+            </div>
+          )}
         </form>
       </div>
 

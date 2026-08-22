@@ -22,6 +22,7 @@ import {
   AdminPayrollPage,
   EmployeeDocumentsPage,
   AdminDocumentsPage,
+  AdminReportsPage,
 } from '../pages';
 import {
   ProtectedRoute,
@@ -217,6 +218,14 @@ export const AppRoutes: React.FC = () => {
               subtitle="Departmental hierarchy and reporting line visualization."
               icon={<Building2 className="w-7 h-7 text-indigo-600" />}
             />
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <AdminRoute>
+              <AdminReportsPage />
+            </AdminRoute>
           }
         />
         <Route

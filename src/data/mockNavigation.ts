@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   Plane,
   Calendar,
+  BarChart3,
 } from 'lucide-react';
 
 export const NAVIGATION_SECTIONS: NavSection[] = [
@@ -88,6 +89,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Leave Management',
         path: '/admin/leave',
         icon: Plane,
+        requiredRole: ['admin', 'hr'],
+      },
+      {
+        id: 'reports',
+        label: 'Reports & Analytics',
+        path: '/admin/reports',
+        icon: BarChart3,
         requiredRole: ['admin', 'hr'],
       },
       {
