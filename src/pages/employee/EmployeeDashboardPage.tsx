@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { useDisclosure } from '../../hooks/useDisclosure';
 import { attendanceService } from '../../services/attendanceService';
+import { notificationService } from '../../services/notificationService';
 import { leaveService, calculateLeaveDays } from '../../services/leaveService';
 import type { AttendanceRecord } from '../../types/attendance';
 import type { LeaveBalances, LeaveRequest, LeaveType } from '../../types/leave';
@@ -202,11 +203,16 @@ export const EmployeeDashboardPage: React.FC = () => {
     try {
       const updated = await attendanceService.checkIn(employeeId, employeeName, department);
       setTodayRecord(updated);
+      
+      notificationService.addNotification({
+        userId: user?.id,
+        title: 'Checked In',
+        message: `You successfully checked in at ${updated.checkIn}. Have a great day!`,
+        type: 'success'
+      });
+
+      success('Checked In', `Good morning, ${employeeName}! Work session started at ${updated.checkIn}. Live counter started.`);
       await loadDashboardData();
-      success(
-        'Clocked In Successfully',
-        `Good morning, ${employeeName}! Work session recorded at ${updated.checkIn}. Live counter started.`
-      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Check-in failed';
       toastError('Check-in Error', msg);
@@ -220,11 +226,16 @@ export const EmployeeDashboardPage: React.FC = () => {
     try {
       const updated = await attendanceService.checkOut(employeeId);
       setTodayRecord(updated);
+      
+      notificationService.addNotification({
+        userId: user?.id,
+        title: 'Checked Out',
+        message: `You successfully checked out at ${updated.checkOut}. See you tomorrow!`,
+        type: 'info'
+      });
+
+      info('Checked Out', `Workday completed at ${updated.checkOut}. Status recorded as ${updated.status}. Duration calculated.`);
       await loadDashboardData();
-      info(
-        'Clocked Out for Today',
-        `Workday completed at ${updated.checkOut}. Session status: ${updated.status}. Duration calculated.`
-      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Check-out failed';
       toastError('Check-out Error', msg);

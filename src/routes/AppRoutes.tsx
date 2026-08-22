@@ -20,6 +20,8 @@ import {
   FoundationOverviewPage,
   EmployeeSalaryPage,
   AdminPayrollPage,
+  EmployeeDocumentsPage,
+  AdminDocumentsPage,
 } from '../pages';
 import {
   ProtectedRoute,
@@ -149,6 +151,14 @@ export const AppRoutes: React.FC = () => {
             </EmployeeRoute>
           }
         />
+        <Route
+          path="/employee/documents"
+          element={
+            <EmployeeRoute>
+              <EmployeeDocumentsPage />
+            </EmployeeRoute>
+          }
+        />
 
         {/* HR / Admin Role Routes */}
         <Route
@@ -220,13 +230,11 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/documents"
+          path="/admin/documents"
           element={
-            <PagePlaceholder
-              title="Document Hub"
-              subtitle="Employee contracts, policy handbooks, and compliance archives."
-              icon={<FileBadge className="w-7 h-7 text-indigo-600" />}
-            />
+            <AdminRoute>
+              <AdminDocumentsPage />
+            </AdminRoute>
           }
         />
         <Route

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { attendanceService } from '../../services/attendanceService';
+import { notificationService } from '../../services/notificationService';
 import type { AttendanceRecord, WeeklyAttendanceDay, AttendanceStatus } from '../../types/attendance';
 import { calculateWorkingHoursString } from '../../utils/timeCalculators';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
@@ -108,8 +109,16 @@ export const EmployeeAttendancePage: React.FC = () => {
       const updated = await attendanceService.checkIn(employeeId, employeeName, department);
       setTodayRecord(updated);
       await loadAttendance();
+      
+      notificationService.addNotification({
+        userId: user?.id || '',
+        title: 'Checked In',
+        message: `You successfully checked in at ${updated.checkIn}. Have a great day!`,
+        type: 'success'
+      });
+
       success(
-        'Clocked In Successfully',
+        'Checked In Successfully',
         `Good morning, ${employeeName}! Work session recorded at ${updated.checkIn}.`
       );
     } catch (err: unknown) {
@@ -126,6 +135,14 @@ export const EmployeeAttendancePage: React.FC = () => {
       const updated = await attendanceService.checkOut(employeeId);
       setTodayRecord(updated);
       await loadAttendance();
+      
+      notificationService.addNotification({
+        userId: user?.id || '',
+        title: 'Checked Out',
+        message: `You successfully checked out at ${updated.checkOut}. See you tomorrow!`,
+        type: 'info'
+      });
+
       info(
         'Clocked Out for Today',
         `Workday completed at ${updated.checkOut}. Status recorded as ${updated.status}.`

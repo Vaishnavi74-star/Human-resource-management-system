@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { useDisclosure } from '../../hooks/useDisclosure';
 import { leaveService } from '../../services/leaveService';
+import { attendanceService } from '../../services/attendanceService';
+import { notificationService } from '../../services/notificationService';
 import type { LeaveRequest, LeaveStatus, LeaveType } from '../../types/leave';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -173,11 +175,16 @@ export const AdminDashboardPage: React.FC = () => {
     setIsApproving(true);
     try {
       await leaveService.approveLeaveRequest(requestToApprove.id, user?.name || 'Eleanor Vance (HR)');
+      
+      notificationService.addNotification({
+        userId: requestToApprove.employeeId,
+        title: 'Leave Approved',
+        message: `Your leave request for ${requestToApprove.startDate} to ${requestToApprove.endDate} was approved.`,
+        type: 'success'
+      });
+
+      success('Leave Approved', `Request for ${requestToApprove.employeeName} has been approved.`);
       approveModal.close();
-      success(
-        'Leave Request Approved',
-        `${requestToApprove.leaveType} leave for ${requestToApprove.employeeName} (${requestToApprove.days} days) has been approved.`
-      );
       await fetchLeaves();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Approval failed';

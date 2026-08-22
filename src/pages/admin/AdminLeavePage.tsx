@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../hooks/useToast';
 import { useDisclosure } from '../../hooks/useDisclosure';
 import { leaveService } from '../../services/leaveService';
+import { notificationService } from '../../services/notificationService';
 import type { LeaveRequest, LeaveType, LeaveStatus } from '../../types/leave';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -87,6 +88,15 @@ export const AdminLeavePage: React.FC = () => {
     setIsApproving(true);
     try {
       await leaveService.approveLeaveRequest(requestToApprove.id, 'Eleanor Vance (HR)');
+      
+      // Trigger notification to the employee
+      notificationService.addNotification({
+        userId: requestToApprove.employeeId,
+        title: 'Leave Approved',
+        message: `Your leave request for ${requestToApprove.startDate} to ${requestToApprove.endDate} was approved.`,
+        type: 'success'
+      });
+
       approveModal.close();
       success(
         'Leave Request Approved',

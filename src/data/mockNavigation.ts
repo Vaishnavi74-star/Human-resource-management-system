@@ -118,6 +118,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         requiredRole: ['employee'],
       },
       {
+        id: 'employee-documents',
+        label: 'My Documents',
+        path: '/employee/documents',
+        icon: FileBadge,
+        requiredRole: ['employee'],
+      },
+      {
         id: 'payroll',
         label: 'Payroll & Benefits',
         path: '/admin/payroll',
@@ -127,8 +134,9 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
       {
         id: 'documents',
         label: 'Document Hub',
-        path: '/documents',
+        path: '/admin/documents',
         icon: FileBadge,
+        requiredRole: ['admin', 'hr'],
       },
     ],
   },

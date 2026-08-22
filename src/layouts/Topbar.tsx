@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
-import { MOCK_NOTIFICATIONS } from '../data/mockUser';
+import { notificationService } from '../services/notificationService';
+import type { AppNotification } from '../types/notification';
 import {
   Menu,
   Search,
@@ -37,6 +38,20 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLDivElement>(null);
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  useEffect(() => {
+    // Subscribe to notifications tailored for this user
+    const unsubscribe = notificationService.subscribe((allNotifs) => {
+      // Filter if necessary, but we'll let service handle filtering or just filter here
+      const userNotifs = allNotifs.filter(n => !n.userId || n.userId === user?.id);
+      setNotifications(userNotifs);
+    });
+    return unsubscribe;
+  }, [user]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -181,7 +196,9 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
             title="Notifications"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full ring-2 ring-white" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
+            )}
           </button>
 
           {isNotificationsOpen && (
@@ -189,12 +206,14 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
               <div className="px-4 pb-2.5 flex items-center justify-between border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Notifications</h4>
-                  <Badge variant="primary" size="xs">3 New</Badge>
+                  {unreadCount > 0 && (
+                    <Badge variant="primary" size="xs">{unreadCount} New</Badge>
+                  )}
                 </div>
                 <button
                   onClick={() => {
+                    notificationService.markAllAsRead(user?.id);
                     success('All marked as read', 'Your notifications inbox is up to date.');
-                    setIsNotificationsOpen(false);
                   }}
                   className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
                 >
@@ -203,22 +222,33 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
               </div>
 
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-50 px-2 py-1">
-                {MOCK_NOTIFICATIONS.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      info(notif.title, notif.message);
-                      setIsNotificationsOpen(false);
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold text-slate-900">{notif.title}</p>
-                      <span className="text-[10px] text-slate-400 shrink-0">{notif.timestamp}</span>
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className={cn(
+                        "p-2.5 rounded-xl transition-colors cursor-pointer",
+                        notif.isRead ? "hover:bg-slate-50" : "bg-indigo-50/50 hover:bg-indigo-50"
+                      )}
+                      onClick={() => {
+                        notificationService.markAsRead(notif.id);
+                        info(notif.title, notif.message);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={cn("text-xs", notif.isRead ? "font-medium text-slate-700" : "font-bold text-slate-900")}>
+                          {notif.title}
+                        </p>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">{notif.message}</p>
                     </div>
-                    <p className="text-xs text-slate-600 mt-1 line-clamp-2">{notif.message}</p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-sm text-slate-500">No notifications</div>
+                )}
               </div>
             </div>
           )}

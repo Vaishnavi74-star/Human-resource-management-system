@@ -16,3 +16,5 @@ export * from './admin/AdminEmployeeDetailPage';
 export * from './shared/LeaveCalendarPage';
 export * from './employee/EmployeeSalaryPage';
 export * from './admin/AdminPayrollPage';
+export * from './employee/EmployeeDocumentsPage';
+export * from './admin/AdminDocumentsPage';
