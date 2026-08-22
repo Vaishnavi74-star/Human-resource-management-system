@@ -9,6 +9,8 @@ import {
   Sparkles,
   ShieldCheck,
   LifeBuoy,
+  Plane,
+  Calendar,
 } from 'lucide-react';
 
 export const NAVIGATION_SECTIONS: NavSection[] = [
@@ -48,8 +50,46 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'WORKFORCE & TEAMS',
+    title: 'TIME & WORKFORCE',
     items: [
+      {
+        id: 'leave-calendar',
+        label: 'Leave Calendar',
+        path: '/calendar',
+        icon: Calendar,
+        badge: 'New',
+        badgeVariant: 'primary',
+      },
+      {
+        id: 'employee-attendance',
+        label: 'My Attendance',
+        path: '/employee/attendance',
+        icon: CalendarCheck,
+        requiredRole: ['employee'],
+      },
+      {
+        id: 'employee-leave',
+        label: 'My Leaves & Time Off',
+        path: '/employee/leave',
+        icon: Plane,
+        badge: '12d Left',
+        badgeVariant: 'primary',
+        requiredRole: ['employee'],
+      },
+      {
+        id: 'admin-attendance',
+        label: 'Workforce Attendance',
+        path: '/admin/attendance',
+        icon: CalendarCheck,
+        requiredRole: ['admin', 'hr'],
+      },
+      {
+        id: 'admin-leave',
+        label: 'Leave Management',
+        path: '/admin/leave',
+        icon: Plane,
+        requiredRole: ['admin', 'hr'],
+      },
       {
         id: 'directory',
         label: 'Employee Directory',
@@ -57,12 +97,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         icon: Users,
         badge: '148',
         badgeVariant: 'neutral',
-      },
-      {
-        id: 'time-attendance',
-        label: 'Time & Attendance',
-        path: '/attendance',
-        icon: CalendarCheck,
+        requiredRole: ['admin', 'hr'],
       },
       {
         id: 'organization',

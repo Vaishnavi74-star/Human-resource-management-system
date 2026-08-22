@@ -3,11 +3,19 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AppShell } from '../layouts/AppShell';
 import {
+  LandingPage,
   LoginPage,
   SignupPage,
   VerifyEmailPage,
   EmployeeDashboardPage,
+  EmployeeAttendancePage,
+  EmployeeLeavePage,
   AdminDashboardPage,
+  AdminAttendancePage,
+  AdminLeavePage,
+  AdminEmployeesPage,
+  AdminEmployeeDetailPage,
+  LeaveCalendarPage,
   ComponentShowcasePage,
   FoundationOverviewPage,
 } from '../pages';
@@ -20,8 +28,6 @@ import {
 import { EmptyState } from '../components/ui/EmptyState';
 import { Card } from '../components/ui/Card';
 import {
-  Users,
-  CalendarCheck,
   Building2,
   CreditCard,
   FileBadge,
@@ -55,12 +61,12 @@ const PagePlaceholder: React.FC<{
   </div>
 );
 
-// Intelligent root redirect based on authenticated role
-const RootRedirect: React.FC = () => {
+// Intelligent root redirect: shows Landing page if guest, or user dashboard if logged in
+const RootDispatcher: React.FC = () => {
   const { isAuthenticated, role } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <LandingPage />;
   }
 
   if (role === 'admin' || role === 'hr') {
@@ -73,6 +79,10 @@ const RootRedirect: React.FC = () => {
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      {/* Root Landing / Dispatcher */}
+      <Route path="/" element={<RootDispatcher />} />
+      <Route path="/landing" element={<LandingPage />} />
+
       {/* Public Auth Routes (Guest Only) */}
       <Route
         path="/login"
@@ -92,9 +102,6 @@ export const AppRoutes: React.FC = () => {
       />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      {/* Root Path Dispatcher */}
-      <Route path="/" element={<RootRedirect />} />
-
       {/* Protected Workplace Routes with Global AppShell */}
       <Route
         element={
@@ -103,7 +110,11 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        {/* Role-Specific Dashboards */}
+        {/* Shared Calendar Route */}
+        <Route path="/calendar" element={<LeaveCalendarPage />} />
+        <Route path="/leave/calendar" element={<LeaveCalendarPage />} />
+
+        {/* Employee Role Routes */}
         <Route
           path="/employee/dashboard"
           element={
@@ -113,6 +124,24 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/employee/attendance"
+          element={
+            <EmployeeRoute>
+              <EmployeeAttendancePage />
+            </EmployeeRoute>
+          }
+        />
+        <Route
+          path="/employee/leave"
+          element={
+            <EmployeeRoute>
+              <EmployeeLeavePage />
+            </EmployeeRoute>
+          }
+        />
+
+        {/* HR / Admin Role Routes */}
+        <Route
           path="/admin/dashboard"
           element={
             <AdminRoute>
@@ -120,34 +149,48 @@ export const AppRoutes: React.FC = () => {
             </AdminRoute>
           }
         />
+        <Route
+          path="/admin/attendance"
+          element={
+            <AdminRoute>
+              <AdminAttendancePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/leave"
+          element={
+            <AdminRoute>
+              <AdminLeavePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/employees"
+          element={
+            <AdminRoute>
+              <AdminEmployeesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/employees/:id"
+          element={
+            <AdminRoute>
+              <AdminEmployeeDetailPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/employees"
+          element={<Navigate to="/admin/employees" replace />}
+        />
 
         {/* Shared System Pages */}
         <Route path="/architecture" element={<FoundationOverviewPage />} />
         <Route path="/components" element={<ComponentShowcasePage />} />
 
         {/* Role-Protected Business Module Placeholders */}
-        <Route
-          path="/employees"
-          element={
-            <AdminRoute>
-              <PagePlaceholder
-                title="Employee Directory"
-                subtitle="Staff profiles, organizational hierarchy, and team assignments."
-                icon={<Users className="w-7 h-7 text-indigo-600" />}
-              />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/attendance"
-          element={
-            <PagePlaceholder
-              title="Time & Attendance"
-              subtitle="Biometric logs, clock-in records, overtime and leaves."
-              icon={<CalendarCheck className="w-7 h-7 text-indigo-600" />}
-            />
-          }
-        />
         <Route
           path="/organization"
           element={
@@ -189,6 +232,16 @@ export const AppRoutes: React.FC = () => {
               icon={<LifeBuoy className="w-7 h-7 text-indigo-600" />}
             />
           }
+        />
+
+        {/* Generic redirects based on role */}
+        <Route
+          path="/attendance"
+          element={<Navigate to="/employee/attendance" replace />}
+        />
+        <Route
+          path="/leave"
+          element={<Navigate to="/employee/leave" replace />}
         />
 
         {/* Catch-all */}

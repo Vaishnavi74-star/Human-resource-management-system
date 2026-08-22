@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { useDisclosure } from '../../hooks/useDisclosure';
+import { attendanceService } from '../../services/attendanceService';
+import { leaveService, calculateLeaveDays } from '../../services/leaveService';
+import type { AttendanceRecord } from '../../types/attendance';
+import type { LeaveBalances, LeaveRequest, LeaveType } from '../../types/leave';
+import { calculateWorkingHoursString } from '../../utils/timeCalculators';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -9,391 +14,305 @@ import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { LoadingState } from '../../components/ui/LoadingState';
-import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
+import { Link } from 'react-router-dom';
 import {
   Clock,
-  CheckCircle2,
-  FileText,
-  Sparkles,
+  CalendarCheck,
   Plane,
   HeartPulse,
   Coffee,
   Play,
   Square,
-  ArrowUpRight,
-  CalendarDays,
-  Bell,
-  UserCheck,
-  Timer,
-  LogIn,
-  ClipboardList,
-  User,
-  HelpCircle,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Info,
+  Sparkles,
+  FileText,
+  CheckCircle2,
   Calendar,
-  Briefcase,
-  Sun,
-  Moon,
-  CloudSun,
+  UserCheck,
+  AlertCircle,
+  Download,
 } from 'lucide-react';
-
-// ─── Types ────────────────────────────────────────────────────────────
-type AttendanceStatus = 'not-checked-in' | 'checked-in' | 'checked-out';
+import { cn } from '../../utils/cn';
 
 interface ActivityItem {
   id: string;
-  type: 'leave-submitted' | 'leave-approved' | 'leave-rejected' | 'profile-updated' | 'attendance-recorded' | 'document-uploaded';
+  type: 'leave_submitted' | 'leave_approved' | 'profile_updated' | 'attendance_recorded';
   title: string;
   description: string;
   timestamp: string;
-  icon: React.ReactNode;
-  badgeVariant: 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'purple';
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
 }
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  type: 'success' | 'warning' | 'info' | 'error';
-}
-
-interface AttendanceLogEntry {
-  date: string;
-  checkIn: string;
-  checkOut: string;
-  status: string;
-  badgeVariant: 'success' | 'neutral' | 'warning' | 'error';
-  hours: string;
-}
-
-// ─── Mock Data ─────────────────────────────────────────────────────────
-const MOCK_ACTIVITIES: ActivityItem[] = [
+const RECENT_ACTIVITIES: ActivityItem[] = [
   {
     id: 'act_1',
-    type: 'leave-submitted',
+    type: 'leave_submitted',
     title: 'Leave Request Submitted',
-    description: 'Annual vacation leave request for Sep 12 – Sep 16, 2026 submitted for approval.',
-    timestamp: '2 hours ago',
-    icon: <Plane className="w-4 h-4" />,
-    badgeVariant: 'primary',
+    description: 'Annual Paid Leave request (Sep 14 - Sep 18, 5 days) submitted for review.',
+    timestamp: '25 mins ago',
+    icon: Plane,
+    iconColor: 'text-indigo-600',
+    iconBg: 'bg-indigo-50',
   },
   {
     id: 'act_2',
-    type: 'leave-approved',
-    title: 'Leave Approved',
-    description: 'Your sick leave request for Aug 18 was approved by Marcus Chen.',
-    timestamp: '1 day ago',
-    icon: <CheckCircle className="w-4 h-4" />,
-    badgeVariant: 'success',
+    type: 'attendance_recorded',
+    title: 'Biometric Attendance Synced',
+    description: 'Morning check-in timestamp confirmed on Workday Terminal #2.',
+    timestamp: 'Today at 09:00 AM',
+    icon: Clock,
+    iconColor: 'text-emerald-600',
+    iconBg: 'bg-emerald-50',
   },
   {
     id: 'act_3',
-    type: 'profile-updated',
-    title: 'Profile Updated',
-    description: 'Emergency contact information and phone number updated successfully.',
-    timestamp: '2 days ago',
-    icon: <User className="w-4 h-4" />,
-    badgeVariant: 'info',
+    type: 'leave_approved',
+    title: 'Time-Off Approved',
+    description: 'Personal leave for Aug 19 was approved by Eleanor Vance (HR).',
+    timestamp: '3 days ago',
+    icon: CheckCircle2,
+    iconColor: 'text-blue-600',
+    iconBg: 'bg-blue-50',
   },
   {
     id: 'act_4',
-    type: 'attendance-recorded',
-    title: 'Attendance Recorded',
-    description: 'Clock-in recorded at 09:02 AM on Aug 21. Total working hours: 8h 28m.',
-    timestamp: '3 days ago',
-    icon: <Clock className="w-4 h-4" />,
-    badgeVariant: 'neutral',
-  },
-  {
-    id: 'act_5',
-    type: 'document-uploaded',
-    title: 'Payslip Available',
-    description: 'July 2026 payslip has been generated and is ready for download.',
-    timestamp: '5 days ago',
-    icon: <FileText className="w-4 h-4" />,
-    badgeVariant: 'purple',
+    type: 'profile_updated',
+    title: 'Workspace Role Confirmed',
+    description: 'Designation updated to Senior Software Engineer in Product Engineering.',
+    timestamp: 'Aug 10, 2026',
+    icon: UserCheck,
+    iconColor: 'text-purple-600',
+    iconBg: 'bg-purple-50',
   },
 ];
 
-const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif_1',
-    title: 'Time-off Request Approved',
-    message: 'Your sick leave for Aug 18 was approved by Marcus Chen.',
-    timestamp: '10m ago',
-    read: false,
-    type: 'success',
-  },
-  {
-    id: 'notif_2',
-    title: 'Timesheet Reminder',
-    message: 'Monthly timesheet approval window closes in 24 hours.',
-    timestamp: '2h ago',
-    read: false,
-    type: 'warning',
-  },
-  {
-    id: 'notif_3',
-    title: 'New Policy Published',
-    message: 'Updated Remote Work & Equipment Reimbursement guidelines are live.',
-    timestamp: '1d ago',
-    read: true,
-    type: 'info',
-  },
-  {
-    id: 'notif_4',
-    title: 'Performance Review Due',
-    message: 'Self-assessment for Q3 is due by Aug 30, 2026.',
-    timestamp: '2d ago',
-    read: true,
-    type: 'warning',
-  },
-];
-
-const MOCK_ATTENDANCE_LOG: AttendanceLogEntry[] = [
-  { date: 'Yesterday, Aug 21', checkIn: '08:55 AM', checkOut: '05:30 PM', status: 'Completed', badgeVariant: 'neutral', hours: '8h 35m' },
-  { date: 'Wednesday, Aug 20', checkIn: '09:05 AM', checkOut: '05:15 PM', status: 'Completed', badgeVariant: 'neutral', hours: '8h 10m' },
-  { date: 'Tuesday, Aug 19', checkIn: '08:48 AM', checkOut: '05:40 PM', status: 'Completed', badgeVariant: 'neutral', hours: '8h 52m' },
-  { date: 'Monday, Aug 18', checkIn: '—', checkOut: '—', status: 'Sick Leave', badgeVariant: 'warning', hours: '0h 00m' },
-];
-
-// ─── Helper Functions ──────────────────────────────────────────────────
-function getGreeting(): { greeting: string; icon: React.ReactNode } {
-  const hour = new Date().getHours();
-  if (hour < 12) return { greeting: 'Good morning', icon: <Sun className="w-5 h-5 text-amber-400" /> };
-  if (hour < 17) return { greeting: 'Good afternoon', icon: <CloudSun className="w-5 h-5 text-orange-400" /> };
-  return { greeting: 'Good evening', icon: <Moon className="w-5 h-5 text-indigo-300" /> };
-}
-
-function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-}
-
-function formatDurationShort(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m`;
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// ─── Component ──────────────────────────────────────────────────────────
 export const EmployeeDashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { success, info } = useToast();
-  const leaveModal = useDisclosure();
+  const { success, info, error: toastError } = useToast();
+  const applyLeaveModal = useDisclosure();
 
-  // ── Dashboard loading / error simulation ──
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const employeeId = user?.employeeId || 'DF-4089';
+  const employeeName = user?.name || 'Alex Morgan';
+  const department = user?.department || 'Product Engineering';
 
-  // ── Attendance state ──
-  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>('not-checked-in');
-  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
-  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null);
-  const [workSeconds, setWorkSeconds] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // State Management
+  const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
+  const [leaveBalances, setLeaveBalances] = useState<LeaveBalances>({
+    annualPaid: 12,
+    annualTotal: 20,
+    sick: 8,
+    sickTotal: 10,
+    unpaidTaken: 0,
+  });
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [liveDuration, setLiveDuration] = useState<string>('00h 00m 00s');
 
-  // ── Notification state ──
-  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  // ── Activity state ──
-  const [activities] = useState<ActivityItem[]>(MOCK_ACTIVITIES);
+  // Apply Leave Modal State
+  const [modalLeaveType, setModalLeaveType] = useState<LeaveType>('Paid');
+  const [modalStart, setModalStart] = useState<string>('2026-09-21');
+  const [modalEnd, setModalEnd] = useState<string>('2026-09-25');
+  const [modalReason, setModalReason] = useState<string>('');
+  const [modalError, setModalError] = useState<string>('');
+  const [isSubmittingLeave, setIsSubmittingLeave] = useState<boolean>(false);
 
-  // ── Leave request form ──
-  const [leaveSubmitting, setLeaveSubmitting] = useState(false);
+  const modalCalculatedDays = calculateLeaveDays(modalStart, modalEnd);
 
-  // Simulate initial data loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  // Greeting helper based on local time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const loadDashboardData = useCallback(async () => {
+    try {
+      setHasError(false);
+      const [todayAtt, balancesRes, requestsRes] = await Promise.all([
+        attendanceService.getTodayAttendance(employeeId, employeeName, department),
+        leaveService.getEmployeeBalances(employeeId),
+        leaveService.getEmployeeLeaveRequests(employeeId),
+      ]);
+
+      setTodayRecord(todayAtt);
+      setLeaveBalances(balancesRes);
+      setLeaveRequests(requestsRes);
+    } catch (err) {
+      console.error('Failed to load employee dashboard data', err);
+      setHasError(true);
+    } finally {
       setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [employeeId, employeeName, department]);
 
-  // Live working-hours counter
   useEffect(() => {
-    if (attendanceStatus === 'checked-in') {
-      timerRef.current = setInterval(() => {
-        setWorkSeconds((prev) => prev + 1);
-      }, 1000);
-    }
+    loadDashboardData();
+
+    const handleSync = () => loadDashboardData();
+    window.addEventListener('dayflow_attendance_updated', handleSync);
+    window.addEventListener('dayflow_leave_updated', handleSync);
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+      window.removeEventListener('dayflow_attendance_updated', handleSync);
+      window.removeEventListener('dayflow_leave_updated', handleSync);
     };
-  }, [attendanceStatus]);
+  }, [loadDashboardData]);
 
-  // ── Handlers ──
-  const handleCheckIn = useCallback(() => {
-    const now = new Date();
-    setCheckInTime(now);
-    setCheckOutTime(null);
-    setWorkSeconds(0);
-    setAttendanceStatus('checked-in');
-    success(
-      'Checked In Successfully',
-      `Your workday has started at ${formatTime(now)}. Have a productive day!`
-    );
-  }, [success]);
+  // Live Timer for checked-in working session
+  const isCheckedIn = todayRecord?.status === 'Working';
 
-  const handleCheckOut = useCallback(() => {
-    const now = new Date();
-    setCheckOutTime(now);
-    setAttendanceStatus('checked-out');
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+  useEffect(() => {
+    if (!isCheckedIn || !todayRecord?.checkIn) {
+      return;
     }
-    info(
-      'Checked Out',
-      `You clocked out at ${formatTime(now)}. Total working hours: ${formatDurationShort(workSeconds)}.`
-    );
-  }, [info, workSeconds]);
 
-  const handleSubmitLeave = useCallback(() => {
-    setLeaveSubmitting(true);
-    setTimeout(() => {
-      setLeaveSubmitting(false);
-      leaveModal.close();
+    const updateTicker = () => {
+      const parts = (todayRecord.checkIn || '09:00').split(':');
+      const startH = parseInt(parts[0], 10) || 9;
+      const startM = parseInt(parts[1], 10) || 0;
+      const now = new Date();
+      const diffSec = Math.max(
+        0,
+        Math.floor((now.getTime() - new Date().setHours(startH, startM, 0, 0)) / 1000)
+      );
+
+      const h = Math.floor(diffSec / 3600);
+      const m = Math.floor((diffSec % 3600) / 60);
+      const s = diffSec % 60;
+      setLiveDuration(
+        `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s
+          .toString()
+          .padStart(2, '0')}s`
+      );
+    };
+
+    updateTicker();
+    const interval = setInterval(updateTicker, 1000);
+    return () => clearInterval(interval);
+  }, [isCheckedIn, todayRecord]);
+
+  // Attendance Toggle: Check In / Check Out
+  const handleCheckIn = async () => {
+    setActionLoading(true);
+    try {
+      const updated = await attendanceService.checkIn(employeeId, employeeName, department);
+      setTodayRecord(updated);
+      await loadDashboardData();
+      success(
+        'Clocked In Successfully',
+        `Good morning, ${employeeName}! Work session recorded at ${updated.checkIn}. Live counter started.`
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Check-in failed';
+      toastError('Check-in Error', msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setActionLoading(true);
+    try {
+      const updated = await attendanceService.checkOut(employeeId);
+      setTodayRecord(updated);
+      await loadDashboardData();
+      info(
+        'Clocked Out for Today',
+        `Workday completed at ${updated.checkOut}. Session status: ${updated.status}. Duration calculated.`
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Check-out failed';
+      toastError('Check-out Error', msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Leave Modal Submit
+  const handleModalLeaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalError('');
+
+    if (modalCalculatedDays <= 0) {
+      setModalError('Please choose a valid date range.');
+      return;
+    }
+
+    if (!modalReason.trim()) {
+      setModalError('Please provide a reason for your request.');
+      return;
+    }
+
+    setIsSubmittingLeave(true);
+    try {
+      await leaveService.submitLeaveRequest({
+        employeeId,
+        employeeName,
+        department,
+        avatarUrl: user?.avatarUrl,
+        leaveType: modalLeaveType,
+        startDate: modalStart,
+        endDate: modalEnd,
+        reason: modalReason.trim(),
+      });
+
+      applyLeaveModal.close();
+      setModalReason('');
       success(
         'Leave Request Submitted',
-        'Your request has been routed to your manager for approval. You will be notified once reviewed.'
+        `Your ${modalCalculatedDays}-day ${modalLeaveType} leave request was sent to HR.`
       );
-    }, 1500);
-  }, [leaveModal, success]);
+      await loadDashboardData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Submission failed';
+      setModalError(msg);
+      toastError('Submission Error', msg);
+    } finally {
+      setIsSubmittingLeave(false);
+    }
+  };
 
-  const handleMarkNotificationRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  }, []);
+  const pendingRequestsCount = leaveRequests.filter((r) => r.status === 'Pending').length;
 
-  const handleRetry = useCallback(() => {
-    setHasError(false);
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1200);
-  }, []);
-
-  const { greeting, icon: greetingIcon } = getGreeting();
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Employee';
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // ── Computed summary values ──
-  const attendanceLabel = attendanceStatus === 'checked-in'
-    ? 'Present'
-    : attendanceStatus === 'checked-out'
-      ? 'Completed'
-      : 'Not Checked In';
-
-  const attendanceTime = attendanceStatus === 'not-checked-in'
-    ? '—'
-    : checkInTime
-      ? formatTime(checkInTime)
-      : '—';
-
-  const workingHoursDisplay = attendanceStatus === 'not-checked-in'
-    ? '00h 00m'
-    : formatDurationShort(workSeconds);
-
-  // ── Loading State ──
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        {/* Skeleton Header */}
-        <div className="rounded-3xl bg-gradient-to-r from-indigo-900/80 via-indigo-800/80 to-indigo-700/80 p-6 sm:p-8 animate-pulse">
-          <div className="space-y-3">
-            <div className="h-5 w-48 bg-white/20 rounded-lg" />
-            <div className="h-8 w-72 bg-white/20 rounded-lg" />
-            <div className="h-4 w-56 bg-white/10 rounded-lg" />
-          </div>
-        </div>
-        {/* Skeleton Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200/80 p-6 animate-pulse">
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-3 w-24 bg-slate-200 rounded" />
-                <div className="w-9 h-9 rounded-xl bg-slate-100" />
-              </div>
-              <div className="h-7 w-20 bg-slate-200 rounded mt-2" />
-              <div className="h-3 w-32 bg-slate-100 rounded mt-2" />
-            </div>
-          ))}
-        </div>
-        <LoadingState
-          message="Loading your dashboard..."
-          description="Fetching attendance, leave balances, and notifications."
-          size="lg"
-          fullHeight
-        />
+      <div className="py-24 flex justify-center">
+        <LoadingState message="Loading your personal employee workspace & metrics..." />
       </div>
     );
   }
 
-  // ── Error State ──
   if (hasError) {
     return (
-      <div className="space-y-8">
-        <div className="rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-700 text-white p-6 sm:p-8 shadow-lg">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
-            {greeting}, {firstName} 👋
-          </h1>
-          <p className="text-sm text-indigo-100/90 mt-1">Here's your workday overview.</p>
-        </div>
-        <ErrorState
-          title="Failed to load dashboard data"
-          message="We couldn't fetch your attendance records, leave balances, and notifications. Please check your connection and try again."
-          onRetry={handleRetry}
-        />
-      </div>
+      <ErrorState
+        title="Failed to Load Dashboard"
+        message="An error occurred while fetching your workspace overview."
+        onRetry={loadDashboardData}
+      />
     );
   }
-
-  // ─── Notification icon map ──
-  const notifIcons: Record<string, React.ReactNode> = {
-    success: <CheckCircle className="w-4 h-4 text-emerald-500" />,
-    warning: <AlertCircle className="w-4 h-4 text-amber-500" />,
-    info: <Info className="w-4 h-4 text-blue-500" />,
-    error: <XCircle className="w-4 h-4 text-rose-500" />,
-  };
 
   return (
     <div className="space-y-8">
-      {/* ════════════════════════════════════════════════════════════════
-           HEADER: Greeting Banner
-         ════════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 text-white p-6 sm:p-8 shadow-xl shadow-indigo-950/15">
+      {/* 1. Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-indigo-700 text-white p-6 sm:p-8 shadow-xl shadow-indigo-950/10">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-xl space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-indigo-100">
-              {greetingIcon}
-              <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+              <span>Dayflow Workplace Portal</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
-              {greeting}, {firstName} 👋
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
+              {getGreeting()}, {user?.name ? user.name.split(' ')[0] : 'Alex'} 👋
             </h1>
             <p className="text-sm text-indigo-100/90 leading-relaxed">
-              Here's your workday overview.
-              {user?.title && (
-                <span> &bull; {user.title}</span>
-              )}
-              {user?.department && (
-                <span> &bull; {user.department}</span>
-              )}
+              Here's your workday overview. {user?.title} &bull; {user?.department} &bull; ID:{' '}
+              <strong className="text-white font-mono">{user?.employeeId || 'DF-4089'}</strong>
             </p>
           </div>
 
@@ -401,554 +320,453 @@ export const EmployeeDashboardPage: React.FC = () => {
             <Button
               variant="white"
               size="md"
-              onClick={leaveModal.open}
+              onClick={() => {
+                setModalError('');
+                applyLeaveModal.open();
+              }}
               leftIcon={<Plane className="w-4 h-4 text-indigo-600" />}
             >
-              Request Time Off
+              Apply for Leave
             </Button>
+            <Link to="/calendar">
+              <Button
+                variant="outline"
+                size="md"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
+                leftIcon={<Calendar className="w-4 h-4" />}
+              >
+                Team Calendar
+              </Button>
+            </Link>
           </div>
         </div>
 
-        {/* Decorative glows */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-20 w-72 h-72 bg-indigo-400/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Decorative background glow */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════
-           SUMMARY CARDS
-         ════════════════════════════════════════════════════════════════ */}
+      {/* 2. 4 Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* 1. Attendance Today */}
-        <Card className="hover:border-emerald-200 transition-all group">
+        {/* Card 1: Attendance Today */}
+        <Card className="hover:border-indigo-200 transition-all p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Attendance</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <UserCheck className="w-5 h-5" />
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Attendance Today</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CalendarCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900">{attendanceLabel}</p>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-              {attendanceStatus !== 'not-checked-in' && (
-                <>
-                  <Clock className="w-3 h-3" />
-                  {attendanceTime}
-                </>
-              )}
-              {attendanceStatus === 'not-checked-in' && (
-                <span className="text-amber-600 font-medium">Awaiting check-in</span>
-              )}
+            <p className="text-2xl font-black text-slate-900">
+              {isCheckedIn ? 'Working' : todayRecord?.status || 'Not Checked In'}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-slate-500 font-mono">
+                {todayRecord?.checkIn ? `Checked in: ${todayRecord.checkIn}` : 'Pending morning punch'}
+              </span>
+              {isCheckedIn && <Badge variant="success" size="xs" dot>Live</Badge>}
+            </div>
+          </div>
+        </Card>
+
+        {/* Card 2: Working Hours */}
+        <Card className="hover:border-indigo-200 transition-all p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Working Hours</span>
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-2xl font-black font-mono text-indigo-700">
+              {isCheckedIn
+                ? liveDuration
+                : calculateWorkingHoursString(todayRecord?.checkIn || null, todayRecord?.checkOut || null, todayRecord?.status)}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {isCheckedIn ? 'Running active workday ticker' : 'Expected standard: 08h 00m'}
             </p>
           </div>
         </Card>
 
-        {/* 2. Working Hours */}
-        <Card className="hover:border-indigo-200 transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Working Hours</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Timer className="w-5 h-5" />
+        {/* Card 3: Leave Balance */}
+        <Link to="/employee/leave" className="block group">
+          <Card className="hover:border-indigo-300 transition-all p-5 h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Leave Balance</span>
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Plane className="w-5 h-5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">{workingHoursDisplay}</p>
-            <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
-              {attendanceStatus === 'checked-in' && (
-                <Badge variant="success" size="xs" dot>Live</Badge>
-              )}
-              {attendanceStatus === 'checked-out' && (
-                <span className="text-emerald-600 font-medium">Day complete</span>
-              )}
-              {attendanceStatus === 'not-checked-in' && (
-                <span>Expected: 8h 00m</span>
-              )}
+            <div className="mt-3">
+              <p className="text-2xl font-black text-slate-900">{leaveBalances.annualPaid} Days</p>
+              <p className="text-xs text-indigo-600 font-semibold group-hover:underline mt-1">
+                {leaveBalances.sick} sick days available &rarr;
+              </p>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </Link>
 
-        {/* 3. Leave Balance */}
-        <Card className="hover:border-amber-200 transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Leave Balance</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <CalendarDays className="w-5 h-5" />
+        {/* Card 4: Pending Leave Requests */}
+        <Link to="/employee/leave" className="block group">
+          <Card className="hover:border-amber-300 transition-all p-5 h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Requests</span>
+              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Sparkles className="w-5 h-5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900">12 <span className="text-xs text-slate-400 font-normal">Days</span></p>
-            <p className="text-xs text-slate-500 mt-1">Across all leave types</p>
-          </div>
-        </Card>
-
-        {/* 4. Pending Leave Requests */}
-        <Card className="hover:border-violet-200 transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Requests</span>
-            <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <ClipboardList className="w-5 h-5" />
+            <div className="mt-3">
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-black text-slate-900">{pendingRequestsCount}</p>
+                {pendingRequestsCount > 0 && <Badge variant="warning" size="xs">In Review</Badge>}
+              </div>
+              <p className="text-xs text-amber-600 font-semibold group-hover:underline mt-1">
+                Awaiting HR manager decision &rarr;
+              </p>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900">2</p>
-            <p className="text-xs text-amber-600 font-medium mt-1">Awaiting manager approval</p>
-          </div>
-        </Card>
+          </Card>
+        </Link>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════
-           ATTENDANCE WIDGET + LEAVE SUMMARY
-         ════════════════════════════════════════════════════════════════ */}
+      {/* 3. Interactive Attendance Widget & Leave Quotas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Live Attendance Clock Widget ── */}
-        <Card className="lg:col-span-1 border-indigo-100 bg-white">
+        {/* Attendance Action Widget */}
+        <Card className="border-indigo-100/90 shadow-md">
           <CardHeader>
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <Clock className="w-4 h-4" />
                 </div>
                 <CardTitle className="text-sm">Attendance Widget</CardTitle>
               </div>
-              <Badge
-                variant={
-                  attendanceStatus === 'checked-in'
-                    ? 'success'
-                    : attendanceStatus === 'checked-out'
-                      ? 'neutral'
-                      : 'warning'
-                }
-                size="xs"
-                dot
-              >
-                {attendanceStatus === 'checked-in'
-                  ? 'Working'
-                  : attendanceStatus === 'checked-out'
-                    ? 'Day Complete'
-                    : 'Not Checked In'}
+              <Badge variant={isCheckedIn ? 'success' : todayRecord?.status === 'Present' ? 'primary' : 'neutral'} size="xs" dot>
+                {isCheckedIn ? 'Working' : todayRecord?.status || 'Not Checked In'}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Status Display */}
-            <div className="text-center p-5 rounded-2xl bg-slate-50 border border-slate-100">
-              {attendanceStatus === 'not-checked-in' && (
-                <>
-                  <div className="w-14 h-14 mx-auto rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center mb-3">
-                    <LogIn className="w-6 h-6 text-amber-500" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-700">Not checked in</p>
-                  <p className="text-xs text-slate-400 mt-1">Start your workday by checking in below</p>
-                </>
-              )}
-
-              {attendanceStatus === 'checked-in' && (
-                <>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Elapsed Work Time</p>
-                  <p className="text-3xl font-mono font-black text-slate-900 mt-1 tracking-tight">
-                    {formatDuration(workSeconds)}
-                  </p>
-                  <div className="flex items-center justify-center gap-4 mt-3 text-xs text-slate-500">
-                    <span>Checked in at <strong className="text-slate-800">{checkInTime ? formatTime(checkInTime) : '—'}</strong></span>
-                    <span>&bull;</span>
-                    <span>Expected: <strong className="text-slate-800">8h 00m</strong></span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="mt-4 h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000 ease-linear"
-                      style={{
-                        width: `${Math.min((workSeconds / (8 * 3600)) * 100, 100)}%`,
-                        background: workSeconds >= 8 * 3600
-                          ? 'linear-gradient(90deg, #10b981, #059669)'
-                          : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                      }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {Math.min(Math.round((workSeconds / (8 * 3600)) * 100), 100)}% of 8h shift completed
-                  </p>
-                </>
-              )}
-
-              {attendanceStatus === 'checked-out' && (
-                <>
-                  <div className="w-14 h-14 mx-auto rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-700">Day Completed</p>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs text-slate-500">
-                      Check-in: <strong className="text-slate-800">{checkInTime ? formatTime(checkInTime) : '—'}</strong>
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Check-out: <strong className="text-slate-800">{checkOutTime ? formatTime(checkOutTime) : '—'}</strong>
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Total: <strong className="text-emerald-700 font-mono">{formatDurationShort(workSeconds)}</strong>
-                    </p>
-                  </div>
-                </>
-              )}
+            {/* Live timer display box */}
+            <div className="text-center p-6 rounded-2xl bg-slate-50/90 border border-slate-200/80">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                {isCheckedIn ? 'Elapsed Working Time' : 'Session Duration'}
+              </p>
+              <p className="text-3xl sm:text-4xl font-mono font-black text-slate-900 mt-2 tracking-tight">
+                {isCheckedIn
+                  ? liveDuration
+                  : todayRecord?.checkOut
+                  ? calculateWorkingHoursString(todayRecord.checkIn, todayRecord.checkOut, todayRecord.status)
+                  : '00h 00m 00s'}
+              </p>
+              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-600 font-medium">
+                <span>
+                  Check In: <strong className="text-slate-900 font-mono">{todayRecord?.checkIn || '--:--'}</strong>
+                </span>
+                <span>&bull;</span>
+                <span>
+                  Check Out: <strong className="text-slate-900 font-mono">{todayRecord?.checkOut || (isCheckedIn ? 'In Progress' : '--:--')}</strong>
+                </span>
+              </div>
             </div>
 
-            {/* Action Button */}
-            {attendanceStatus === 'not-checked-in' && (
-              <Button
-                variant="success"
-                size="lg"
-                className="w-full justify-center"
-                onClick={handleCheckIn}
-                leftIcon={<Play className="w-4 h-4" />}
-              >
-                Check In
-              </Button>
-            )}
-
-            {attendanceStatus === 'checked-in' && (
+            {/* Interactive Toggle Button */}
+            {isCheckedIn ? (
               <Button
                 variant="danger"
                 size="lg"
-                className="w-full justify-center"
+                className="w-full justify-center shadow-md shadow-rose-200"
                 onClick={handleCheckOut}
+                isLoading={actionLoading}
                 leftIcon={<Square className="w-4 h-4" />}
               >
-                Check Out
+                Clock Out for Today
               </Button>
-            )}
-
-            {attendanceStatus === 'checked-out' && (
-              <div className="text-center">
-                <p className="text-xs text-slate-400">You've completed your shift for today. 🎉</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ── Leave Summary ── */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="hover:border-indigo-200 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                  <Plane className="w-5 h-5" />
-                </div>
-                <Badge variant="primary" size="xs">Paid</Badge>
-              </div>
-              <p className="text-xs font-semibold text-slate-500">Annual Vacation</p>
-              <p className="text-3xl font-black text-slate-900 mt-1">16 <span className="text-xs text-slate-400 font-normal">Days Left</span></p>
-            </div>
-            <div className="mt-4 pt-2.5 border-t border-slate-100 space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
-                <span>Used</span>
-                <span className="font-semibold text-slate-600">4 days</span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full" style={{ width: '20%' }} />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="hover:border-emerald-200 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <HeartPulse className="w-5 h-5" />
-                </div>
-                <Badge variant="success" size="xs">Active</Badge>
-              </div>
-              <p className="text-xs font-semibold text-slate-500">Sick & Medical</p>
-              <p className="text-3xl font-black text-slate-900 mt-1">8 <span className="text-xs text-slate-400 font-normal">Days Left</span></p>
-            </div>
-            <div className="mt-4 pt-2.5 border-t border-slate-100 space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
-                <span>Used</span>
-                <span className="font-semibold text-slate-600">2 days</span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '20%' }} />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="hover:border-amber-200 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <Coffee className="w-5 h-5" />
-                </div>
-                <Badge variant="warning" size="xs">Personal</Badge>
-              </div>
-              <p className="text-xs font-semibold text-slate-500">Floating Holidays</p>
-              <p className="text-3xl font-black text-slate-900 mt-1">2 <span className="text-xs text-slate-400 font-normal">Days Left</span></p>
-            </div>
-            <div className="mt-4 pt-2.5 border-t border-slate-100 space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
-                <span>Used</span>
-                <span className="font-semibold text-slate-600">1 day</span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: '33%' }} />
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════════════════════
-           QUICK ACTIONS
-         ════════════════════════════════════════════════════════════════ */}
-      <Card padding="sm">
-        <div className="flex items-center gap-2 mb-3 px-2">
-          <Sparkles className="w-4 h-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold text-slate-900">Quick Actions</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-          {[
-            { label: 'Apply Leave', icon: <Plane className="w-5 h-5" />, color: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100', action: () => leaveModal.open() },
-            { label: 'View Payslips', icon: <FileText className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100', action: () => info('Payslips', 'Navigating to your payslip archive...') },
-            { label: 'My Attendance', icon: <Calendar className="w-5 h-5" />, color: 'bg-violet-50 text-violet-600 hover:bg-violet-100', action: () => info('Attendance', 'Opening full attendance log...') },
-            { label: 'Update Profile', icon: <User className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600 hover:bg-amber-100', action: () => info('Profile', 'Opening profile settings...') },
-            { label: 'Team Directory', icon: <Briefcase className="w-5 h-5" />, color: 'bg-rose-50 text-rose-600 hover:bg-rose-100', action: () => info('Team', 'Opening team directory...') },
-            { label: 'Help & Support', icon: <HelpCircle className="w-5 h-5" />, color: 'bg-blue-50 text-blue-600 hover:bg-blue-100', action: () => info('Support', 'Opening knowledge base...') },
-          ].map((item, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={item.action}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border border-transparent transition-all duration-200 cursor-pointer hover:border-slate-200 hover:shadow-sm active:scale-[0.97] ${item.color}`}
-            >
-              {item.icon}
-              <span className="text-xs font-semibold text-slate-700">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      {/* ════════════════════════════════════════════════════════════════
-           ATTENDANCE LOG + RECENT ACTIVITY + NOTIFICATIONS
-         ════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Today's Attendance Summary / Attendance Log ── */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <CardTitle>Attendance Log</CardTitle>
-                <CardDescription>Recent clock records this week</CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => info('View All', 'Opening full attendance history...')}
-                rightIcon={<ArrowUpRight className="w-3.5 h-3.5" />}
-              >
-                View All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Today's entry (dynamic) */}
-            {attendanceStatus !== 'not-checked-in' && (
-              <div className="py-3 flex items-center justify-between text-xs border-b border-slate-100">
-                <div>
-                  <p className="font-bold text-slate-800">Today, Aug 22</p>
-                  <p className="text-slate-500 mt-0.5">
-                    {checkInTime ? formatTime(checkInTime) : '—'} &rarr; {checkOutTime ? formatTime(checkOutTime) : 'In Progress'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-slate-700 font-mono">{formatDurationShort(workSeconds)}</span>
-                  <Badge variant={attendanceStatus === 'checked-in' ? 'success' : 'neutral'} size="xs">
-                    {attendanceStatus === 'checked-in' ? 'On Duty' : 'Complete'}
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Historical entries */}
-            <div className="divide-y divide-slate-100">
-              {MOCK_ATTENDANCE_LOG.map((row, idx) => (
-                <div key={idx} className="py-3 flex items-center justify-between text-xs">
-                  <div>
-                    <p className="font-bold text-slate-800">{row.date}</p>
-                    <p className="text-slate-500 mt-0.5">{row.checkIn} &rarr; {row.checkOut}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-slate-700 font-mono">{row.hours}</span>
-                    <Badge variant={row.badgeVariant} size="xs">{row.status}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ── Recent Activity Feed ── */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest actions & updates</CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => info('Activity', 'Opening full activity log...')}
-                rightIcon={<ArrowUpRight className="w-3.5 h-3.5" />}
-              >
-                See All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {activities.length === 0 ? (
-              <EmptyState
-                title="No recent activity"
-                description="Your recent actions will appear here once you start using the platform."
-                icon={<ClipboardList className="w-7 h-7 text-indigo-600" />}
-              />
             ) : (
-              <div className="space-y-4">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="flex gap-3 group">
-                    <div className="mt-0.5 shrink-0">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                        activity.badgeVariant === 'success' ? 'bg-emerald-50 text-emerald-600' :
-                        activity.badgeVariant === 'primary' ? 'bg-indigo-50 text-indigo-600' :
-                        activity.badgeVariant === 'info' ? 'bg-blue-50 text-blue-600' :
-                        activity.badgeVariant === 'purple' ? 'bg-purple-50 text-purple-600' :
-                        activity.badgeVariant === 'warning' ? 'bg-amber-50 text-amber-600' :
-                        activity.badgeVariant === 'error' ? 'bg-rose-50 text-rose-600' :
-                        'bg-slate-50 text-slate-600'
-                      }`}>
-                        {activity.icon}
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 leading-tight">{activity.title}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed line-clamp-2">{activity.description}</p>
-                      <p className="text-[10px] text-slate-400 mt-1">{activity.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Button
+                variant="success"
+                size="lg"
+                className="w-full justify-center shadow-md shadow-emerald-200"
+                onClick={handleCheckIn}
+                isLoading={actionLoading}
+                leftIcon={<Play className="w-4 h-4" />}
+              >
+                Check In to Start Work
+              </Button>
             )}
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Shift: 09:00 AM - 05:30 PM</span>
+              <Link to="/employee/attendance" className="text-indigo-600 font-bold hover:underline">
+                View Log &rarr;
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
-        {/* ── Notification Preview ── */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <div>
-                  <CardTitle>Notifications</CardTitle>
-                  <CardDescription>Stay updated</CardDescription>
+        {/* Leave Balances Quota Cards */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Leave Quotas & Allocation</h3>
+            <Link to="/employee/leave" className="text-xs font-bold text-indigo-600 hover:underline">
+              Manage Leaves &rarr;
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Annual Paid */}
+            <Card className="p-4 hover:border-indigo-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <Plane className="w-4 h-4" />
+                  </div>
+                  <Badge variant="primary" size="xs">Paid</Badge>
                 </div>
-                {unreadCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-rose-500 rounded-full animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
+                <p className="text-xs font-semibold text-slate-500">Annual Vacation</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">
+                  {leaveBalances.annualPaid} <span className="text-xs text-slate-400 font-normal">/ {leaveBalances.annualTotal}d</span>
+                </p>
               </div>
+              <p className="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                Accrues +1.5 days/month
+              </p>
+            </Card>
+
+            {/* Sick Leave */}
+            <Card className="p-4 hover:border-purple-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <HeartPulse className="w-4 h-4" />
+                  </div>
+                  <Badge variant="purple" size="xs">Medical</Badge>
+                </div>
+                <p className="text-xs font-semibold text-slate-500">Sick & Medical</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">
+                  {leaveBalances.sick} <span className="text-xs text-slate-400 font-normal">/ {leaveBalances.sickTotal}d</span>
+                </p>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                Zero note under 2 days
+              </p>
+            </Card>
+
+            {/* Unpaid */}
+            <Card className="p-4 hover:border-slate-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <Coffee className="w-4 h-4" />
+                  </div>
+                  <Badge variant="neutral" size="xs">Unpaid</Badge>
+                </div>
+                <p className="text-xs font-semibold text-slate-500">Unpaid Leave</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">Available</p>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                Subject to approval
+              </p>
+            </Card>
+          </div>
+
+          {/* Quick Actions Panel */}
+          <Card className="p-4 bg-linear-to-r from-slate-50 to-indigo-50/40 border-slate-200">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Quick Workplace Actions</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="xs"
+                className="bg-white justify-center text-xs"
                 onClick={() => {
-                  setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                  info('Notifications', 'All notifications marked as read.');
+                  setModalError('');
+                  applyLeaveModal.open();
                 }}
+                leftIcon={<Plane className="w-3.5 h-3.5 text-indigo-600" />}
               >
-                Mark all read
+                Apply Leave
               </Button>
+              <Link to="/employee/attendance">
+                <Button variant="outline" size="xs" className="w-full bg-white justify-center text-xs" leftIcon={<Clock className="w-3.5 h-3.5 text-emerald-600" />}>
+                  My Timesheet
+                </Button>
+              </Link>
+              <Link to="/calendar">
+                <Button variant="outline" size="xs" className="w-full bg-white justify-center text-xs" leftIcon={<Calendar className="w-3.5 h-3.5 text-purple-600" />}>
+                  Leave Calendar
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="xs"
+                className="bg-white justify-center text-xs"
+                onClick={() => info('Payslip Download', 'Downloading July 2026 Payslip summary.')}
+                leftIcon={<Download className="w-3.5 h-3.5 text-blue-600" />}
+              >
+                Download Pay
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* 4. Recent Activity & Payslips Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity Feed */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <CardTitle>Recent Activity & Timeline</CardTitle>
+                <CardDescription>Track your attendance, leave submissions, and organizational events</CardDescription>
+              </div>
+              <Badge variant="primary" size="xs">Live Stream</Badge>
             </div>
           </CardHeader>
           <CardContent>
-            {notifications.length === 0 ? (
-              <EmptyState
-                title="All caught up!"
-                description="No new notifications at the moment."
-                icon={<Bell className="w-7 h-7 text-indigo-600" />}
-              />
-            ) : (
-              <div className="space-y-1">
-                {notifications.map((notif) => (
-                  <button
-                    key={notif.id}
-                    type="button"
-                    onClick={() => handleMarkNotificationRead(notif.id)}
-                    className={`w-full text-left p-3 rounded-xl transition-all duration-200 cursor-pointer group ${
-                      notif.read
-                        ? 'bg-white hover:bg-slate-50'
-                        : 'bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100/60'
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      <div className="mt-0.5 shrink-0">
-                        {notifIcons[notif.type]}
+            <div className="divide-y divide-slate-100">
+              {RECENT_ACTIVITIES.map((act) => {
+                const Icon = act.icon;
+                return (
+                  <div key={act.id} className="py-3.5 flex items-start justify-between gap-3 hover:bg-slate-50/50 p-2 rounded-xl transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5', act.iconBg, act.iconColor)}>
+                        <Icon className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className={`text-xs font-bold leading-tight ${notif.read ? 'text-slate-700' : 'text-slate-900'}`}>
-                            {notif.title}
-                          </p>
-                          {!notif.read && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{notif.message}</p>
-                        <p className="text-[10px] text-slate-400 mt-1">{notif.timestamp}</p>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{act.title}</p>
+                        <p className="text-xs text-slate-600 mt-0.5">{act.description}</p>
                       </div>
                     </div>
-                  </button>
-                ))}
-              </div>
-            )}
+                    <span className="text-[10px] font-mono text-slate-400 shrink-0 mt-0.5">{act.timestamp}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Verified Documents & Payslips */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Payslips & Documents</CardTitle>
+              <CardDescription>Recent HR disbursements</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { title: 'July 2026 Monthly Payslip', desc: 'Disbursed Jul 31 &bull; Net: $6,450.00', icon: FileText },
+              { title: 'June 2026 Monthly Payslip', desc: 'Disbursed Jun 30 &bull; Net: $6,450.00', icon: FileText },
+              { title: 'Form W-2 / Annual Tax Summary', desc: 'Year 2025 Tax Declaration &bull; Verified', icon: CheckCircle2 },
+            ].map((doc, i) => {
+              const Icon = doc.icon;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100/80 transition-all cursor-pointer"
+                  onClick={() => success('Downloaded', `Downloaded ${doc.title}.`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">{doc.title}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{doc.desc}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="xs">
+                    Get
+                  </Button>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════
-           REQUEST LEAVE MODAL
-         ════════════════════════════════════════════════════════════════ */}
+      {/* Apply Leave Modal */}
       <Modal
-        isOpen={leaveModal.isOpen}
-        onClose={leaveModal.close}
-        title="Submit Time Off Request"
-        description="Select your leave type and requested dates for managerial review."
+        isOpen={applyLeaveModal.isOpen}
+        onClose={applyLeaveModal.close}
+        title="Submit Leave Request"
+        description="Select your leave category, dates, and provide a brief reason for managerial review."
         footer={
           <>
-            <Button variant="outline" size="sm" onClick={leaveModal.close} disabled={leaveSubmitting}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={applyLeaveModal.close}
+              disabled={isSubmittingLeave}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               size="sm"
-              onClick={handleSubmitLeave}
-              isLoading={leaveSubmitting}
+              onClick={handleModalLeaveSubmit}
+              isLoading={isSubmittingLeave}
             >
               Submit Request
             </Button>
           </>
         }
       >
-        <div className="space-y-4">
+        <form onSubmit={handleModalLeaveSubmit} className="space-y-4">
+          {modalError && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{modalError}</span>
+            </div>
+          )}
+
           <Select
-            label="Leave Type"
+            label="Leave Category"
+            value={modalLeaveType}
+            onChange={(e) => setModalLeaveType(e.target.value as LeaveType)}
             options={[
-              { value: 'vacation', label: 'Annual Vacation Leave (16 days remaining)' },
-              { value: 'sick', label: 'Medical / Sick Leave (8 days remaining)' },
-              { value: 'floating', label: 'Floating Holiday (2 days remaining)' },
-              { value: 'unpaid', label: 'Unpaid Leave of Absence' },
+              { value: 'Paid', label: `Annual Paid Leave (${leaveBalances.annualPaid} days available)` },
+              { value: 'Sick', label: `Medical / Sick Leave (${leaveBalances.sick} days available)` },
+              { value: 'Unpaid', label: 'Unpaid Leave of Absence' },
             ]}
           />
+
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Start Date" type="date" defaultValue="2026-09-14" />
-            <Input label="End Date" type="date" defaultValue="2026-09-18" />
+            <Input
+              label="Start Date"
+              type="date"
+              value={modalStart}
+              onChange={(e) => setModalStart(e.target.value)}
+              required
+            />
+            <Input
+              label="End Date"
+              type="date"
+              value={modalEnd}
+              onChange={(e) => setModalEnd(e.target.value)}
+              required
+            />
           </div>
-          <Input label="Reason / Notes (Optional)" placeholder="e.g. Family vacation trip" />
-        </div>
+
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-50 border border-indigo-100 text-xs">
+            <span className="font-semibold text-indigo-900">Calculated Duration:</span>
+            <span className="font-bold font-mono text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200">
+              {modalCalculatedDays} Working Days
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700">
+              Reason / Notes <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              value={modalReason}
+              onChange={(e) => setModalReason(e.target.value)}
+              placeholder="e.g. Family vacation, personal appointment, medical checkup"
+              required
+            />
+          </div>
+        </form>
       </Modal>
     </div>
   );
