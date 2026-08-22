@@ -192,7 +192,21 @@ export const SettingsPage: React.FC = () => {
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setPreferencesData({...preferencesData, theme: t})}
+                  onClick={() => {
+                    setPreferencesData({...preferencesData, theme: t});
+                    if (t === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    } else if (t === 'light') {
+                      document.documentElement.classList.remove('dark');
+                    } else {
+                      // system
+                      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.documentElement.classList.add('dark');
+                      } else {
+                        document.documentElement.classList.remove('dark');
+                      }
+                    }
+                  }}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
                     preferencesData.theme === t ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
                   }`}

@@ -32,6 +32,18 @@
   }
 }
 
+/* Simple Dark Mode via CSS Filter */
+html.dark {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #111;
+}
+html.dark img, 
+html.dark video, 
+html.dark .avatar, 
+html.dark [style*="background-image"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
