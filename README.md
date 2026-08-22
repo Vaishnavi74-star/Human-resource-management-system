@@ -10,17 +10,21 @@ DAYFLOW is a modern Human Resource Management System (HRMS) designed to bring em
 
 <img width="1905" height="888" alt="image" src="https://github.com/user-attachments/assets/149a4078-e4cf-4342-ae47-8a38fea5dba8" />
 
+
+
 👤 Employee Module
 
 <img width="1917" height="909" alt="image" src="https://github.com/user-attachments/assets/26a10a98-5a16-48b8-8674-a863b2a62874" />
+
+
 
 
 🧑‍💼 HR / Admin Module
 
 <img width="1906" height="963" alt="image" src="https://github.com/user-attachments/assets/daf15e0c-bdc1-4e9d-8dd8-eb230b15b412" />
 
-💡 Add your real screenshots here.
-Create a screenshots folder in the project and place your images inside it.
+
+
 
 🎯 Problem
 
