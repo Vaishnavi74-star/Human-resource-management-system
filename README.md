@@ -462,32 +462,6 @@ The overall goal is to make important HR information easy to understand without 
 
 ---
 
-## 📸 Screenshots
-
-Store your real screenshots inside the `screenshots` folder.
-
-```text
-screenshots/
-│
-├── employee-dashboard.png
-├── employee-module.png
-└── hr-dashboard.png
-```
-
-### 📊 Employee Dashboard
-
-![DAYFLOW Employee Dashboard](./screenshots/employee-dashboard.png)
-
-### 👤 Employee Module
-
-![DAYFLOW Employee Module](./screenshots/employee-module.png)
-
-### 🧑‍💼 HR / Admin Dashboard
-
-![DAYFLOW HR Dashboard](./screenshots/hr-dashboard.png)
-
----
-
 ## ⚙️ Getting Started
 
 ### 1. Clone the Repository
