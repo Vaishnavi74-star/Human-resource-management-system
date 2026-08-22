@@ -17,3 +17,4 @@ export * from './admin/AdminPayrollPage';
 export * from './employee/EmployeeDocumentsPage';
 export * from './admin/AdminDocumentsPage';
 export * from './admin/AdminReportsPage';
+export * from './shared/SettingsPage';

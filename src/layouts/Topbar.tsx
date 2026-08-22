@@ -372,27 +372,26 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
               {/* Menu items */}
               <div className="p-1.5 space-y-0.5 text-xs">
-                <button
-                  onClick={() => {
-                    info('Account Settings', 'Opening personal preferences.');
-                    setIsProfileOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <User className="w-4 h-4 text-slate-400" />
-                  <span>My Profile</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    info('System Preferences', 'Configuring Dayflow theme & notifications.');
-                    setIsProfileOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <Settings className="w-4 h-4 text-slate-400" />
-                  <span>Settings & Preferences</span>
-                </button>
+                  <button 
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      navigate('/settings');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    My Profile
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      navigate('/settings');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings & Preferences
+                  </button>
               </div>
 
               <div className="p-1.5 border-t border-slate-100">

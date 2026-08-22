@@ -10,6 +10,7 @@ import {
   Plane,
   Calendar,
   BarChart3,
+  Settings,
 } from 'lucide-react';
 
 export const NAVIGATION_SECTIONS: NavSection[] = [
@@ -133,6 +134,12 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
   {
     title: 'SUPPORT & SETTINGS',
     items: [
+      {
+        id: 'settings',
+        label: 'Settings & Preferences',
+        path: '/settings',
+        icon: Settings,
+      },
       {
         id: 'help',
         label: 'Help & Knowledge Base',

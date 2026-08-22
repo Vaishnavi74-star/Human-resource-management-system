@@ -21,6 +21,7 @@ import {
   EmployeeDocumentsPage,
   AdminDocumentsPage,
   AdminReportsPage,
+  SettingsPage,
 } from '../pages';
 import {
   ProtectedRoute,
@@ -203,6 +204,10 @@ export const AppRoutes: React.FC = () => {
           element={<Navigate to="/admin/employees" replace />}
         />
 
+        {/* Shared System Pages */}
+        <Route path="/architecture" element={<FoundationOverviewPage />} />
+        <Route path="/components" element={<ComponentShowcasePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         {/* Role-Protected Business Module Placeholders */}
         <Route
           path="/organization"
