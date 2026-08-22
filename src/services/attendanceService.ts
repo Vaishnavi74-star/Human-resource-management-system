@@ -9,14 +9,14 @@ import {
   calculateWorkingMinutes,
   getCurrentTimeString,
 } from '../utils/timeCalculators';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const ATTENDANCE_STORAGE_KEY = 'dayflow_attendance_records';
-const delay = (ms: number = 250) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Generate dynamic Monday-Friday dates for current week
 function getWeekDates(offsetWeeks: number = 0): { dayName: string; date: string; formattedDate: string }[] {
   const now = new Date();
-  // Adjust to Monday of current week
   const day = now.getDay();
   const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1) + offsetWeeks * 7;
   const monday = new Date(now.setDate(diffToMonday));
@@ -41,9 +41,9 @@ function getWeekDates(offsetWeeks: number = 0): { dayName: string; date: string;
 
 const currentWeekDates = getWeekDates(0);
 
-// Default seed data
+// Default seed data for historical reference
 const INITIAL_ATTENDANCE_DB: AttendanceRecord[] = [
-  // Alex Morgan (Employee Demo User DF-4089)
+  // Alex Morgan (DF-4089) historical logs
   {
     id: 'att_am_1',
     employeeId: 'DF-4089',
@@ -92,27 +92,15 @@ const INITIAL_ATTENDANCE_DB: AttendanceRecord[] = [
     status: 'Half-day',
     notes: 'Morning shift only',
   },
-  {
-    id: 'att_am_5',
-    employeeId: 'DF-4089',
-    employeeName: 'Alex Morgan',
-    department: 'Product Engineering',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=250&auto=format&fit=crop',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: '09:00',
-    checkOut: null,
-    status: 'Working',
-    notes: 'Currently in workspace session',
-  },
 
   // Marcus Chen (DF-1092)
   {
-    id: 'att_mc_today',
+    id: 'att_mc_1',
     employeeId: 'DF-1092',
     employeeName: 'Marcus Chen',
     department: 'Engineering',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=250&auto=format&fit=crop',
-    date: currentWeekDates[4]?.date || '2026-08-21',
+    date: currentWeekDates[0]?.date || '2026-08-17',
     checkIn: '08:52',
     checkOut: '17:15',
     status: 'Present',
@@ -121,81 +109,16 @@ const INITIAL_ATTENDANCE_DB: AttendanceRecord[] = [
 
   // Sofia Rodriguez (DF-2041)
   {
-    id: 'att_sr_today',
+    id: 'att_sr_1',
     employeeId: 'DF-2041',
     employeeName: 'Sofia Rodriguez',
     department: 'Product Design',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=250&auto=format&fit=crop',
-    date: currentWeekDates[4]?.date || '2026-08-21',
+    date: currentWeekDates[1]?.date || '2026-08-18',
     checkIn: null,
     checkOut: null,
     status: 'Leave',
     notes: 'Approved Medical Sick Leave',
-  },
-
-  // David Kim (DF-3118)
-  {
-    id: 'att_dk_today',
-    employeeId: 'DF-3118',
-    employeeName: 'David Kim',
-    department: 'Sales & BD',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: '09:15',
-    checkOut: '13:15',
-    status: 'Half-day',
-    notes: 'Client on-site afternoon visit',
-  },
-
-  // Zara Patel (DF-4090)
-  {
-    id: 'att_zp_today',
-    employeeId: 'DF-4090',
-    employeeName: 'Zara Patel',
-    department: 'Operations',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: '08:45',
-    checkOut: null,
-    status: 'Working',
-    notes: 'Facility audit duty',
-  },
-
-  // Maya Lin (DF-5012)
-  {
-    id: 'att_ml_today',
-    employeeId: 'DF-5012',
-    employeeName: 'Maya Lin',
-    department: 'Product Marketing',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: '09:05',
-    checkOut: '17:35',
-    status: 'Present',
-  },
-
-  // James Parker (DF-6022)
-  {
-    id: 'att_jp_today',
-    employeeId: 'DF-6022',
-    employeeName: 'James Parker',
-    department: 'Finance & Legal',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: null,
-    checkOut: null,
-    status: 'Absent',
-    notes: 'Unexcused absence / flagged',
-  },
-
-  // Eleanor Vance (HR Admin DF-1001)
-  {
-    id: 'att_ev_today',
-    employeeId: 'DF-1001',
-    employeeName: 'Eleanor Vance',
-    department: 'Human Resources',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=250&auto=format&fit=crop',
-    date: currentWeekDates[4]?.date || '2026-08-21',
-    checkIn: '08:30',
-    checkOut: null,
-    status: 'Working',
-    notes: 'HR Console Session active',
   },
 ];
 
@@ -215,7 +138,6 @@ function getStoredRecords(): AttendanceRecord[] {
 function saveRecords(records: AttendanceRecord[]) {
   try {
     localStorage.setItem(ATTENDANCE_STORAGE_KEY, JSON.stringify(records));
-    // Dispatch custom event for cross-component sync
     window.dispatchEvent(new Event('dayflow_attendance_updated'));
   } catch (err) {
     console.error('Failed to save attendance records', err);
@@ -226,53 +148,54 @@ export const attendanceService = {
   /**
    * Get today's attendance record for an employee
    */
-  async getTodayAttendance(employeeId: string, employeeName: string = 'Alex Morgan', department: string = 'Product Engineering'): Promise<AttendanceRecord> {
-    await delay(100);
-    const records = getStoredRecords();
+  async getTodayAttendance(
+    employeeId: string,
+    employeeName: string = 'Alex Morgan',
+    department: string = 'Product Engineering'
+  ): Promise<AttendanceRecord> {
+    await delay(80);
     const todayDate = new Date().toISOString().split('T')[0];
+    const records = getStoredRecords();
 
-    let record = records.find(
+    // 1. Try finding today's record in local storage
+    const found = records.find(
       (r) => r.employeeId.toUpperCase() === employeeId.toUpperCase() && r.date === todayDate
     );
 
-    // If not found for today, create or return fallback
-    if (!record) {
-      // Check if there is a record for the current Friday/latest seed
-      const latestSeed = records.find((r) => r.employeeId.toUpperCase() === employeeId.toUpperCase());
-      if (latestSeed && latestSeed.date === (currentWeekDates[4]?.date || '')) {
-        record = latestSeed;
-      } else {
-        record = {
-          id: `att_${employeeId}_${Date.now()}`,
-          employeeId: employeeId.toUpperCase(),
-          employeeName,
-          department,
-          date: todayDate,
-          checkIn: null,
-          checkOut: null,
-          status: 'Absent',
-        };
-      }
+    if (found) {
+      return found;
     }
 
-    return record;
+    // 2. Return a fresh record ready for clock in
+    const defaultRecord: AttendanceRecord = {
+      id: `att_${employeeId}_${todayDate}`,
+      employeeId: employeeId.toUpperCase(),
+      employeeName,
+      department,
+      date: todayDate,
+      checkIn: null,
+      checkOut: null,
+      status: 'Absent',
+    };
+
+    return defaultRecord;
   },
 
   /**
-   * Check in employee for today
+   * Clock in employee for today
    */
   async checkIn(
     employeeId: string,
     employeeName: string = 'Alex Morgan',
     department: string = 'Product Engineering'
   ): Promise<AttendanceRecord> {
-    await delay(300);
+    await delay(250);
     const records = getStoredRecords();
     const todayDate = new Date().toISOString().split('T')[0];
     const timeNow = getCurrentTimeString(true);
 
     const index = records.findIndex(
-      (r) => r.employeeId.toUpperCase() === employeeId.toUpperCase() && (r.date === todayDate || r.date === currentWeekDates[4]?.date)
+      (r) => r.employeeId.toUpperCase() === employeeId.toUpperCase() && r.date === todayDate
     );
 
     let updated: AttendanceRecord;
@@ -283,7 +206,7 @@ export const attendanceService = {
         checkIn: timeNow,
         checkOut: null,
         status: 'Working',
-        notes: 'Active workspace session',
+        notes: 'Live biometric workday entry',
       };
       records[index] = updated;
     } else {
@@ -296,36 +219,65 @@ export const attendanceService = {
         checkIn: timeNow,
         checkOut: null,
         status: 'Working',
-        notes: 'Active workspace session',
+        notes: 'Live biometric workday entry',
       };
       records.push(updated);
     }
 
     saveRecords(records);
+
+    // Sync to Supabase if active
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('attendance').upsert({
+          employee_id: employeeId.toUpperCase(),
+          date: todayDate,
+          check_in: timeNow,
+          status: 'Working',
+          notes: 'Biometric web punch',
+        });
+      } catch (err) {
+        console.warn('Supabase attendance sync warning:', err);
+      }
+    }
+
     return updated;
   },
 
   /**
-   * Check out employee for today
+   * Clock out employee for today
    */
   async checkOut(employeeId: string): Promise<AttendanceRecord> {
-    await delay(300);
+    await delay(250);
     const records = getStoredRecords();
     const todayDate = new Date().toISOString().split('T')[0];
     const timeNow = getCurrentTimeString(true);
 
-    const index = records.findIndex(
-      (r) => r.employeeId.toUpperCase() === employeeId.toUpperCase() && (r.date === todayDate || r.date === currentWeekDates[4]?.date)
+    let index = records.findIndex(
+      (r) => r.employeeId.toUpperCase() === employeeId.toUpperCase() && r.date === todayDate
     );
 
     if (index < 0) {
-      throw new Error('No check-in record found for today. Please check in first.');
+      // Create record with default morning checkin if none existed
+      const autoIn: AttendanceRecord = {
+        id: `att_${employeeId}_${Date.now()}`,
+        employeeId: employeeId.toUpperCase(),
+        employeeName: 'Alex Morgan',
+        department: 'Product Engineering',
+        date: todayDate,
+        checkIn: '09:00',
+        checkOut: timeNow,
+        status: 'Present',
+        notes: `Clocked out at ${timeNow}`,
+      };
+      records.push(autoIn);
+      saveRecords(records);
+      return autoIn;
     }
 
     const checkInTime = records[index].checkIn || '09:00';
     const minutes = calculateWorkingMinutes(checkInTime, timeNow);
-    // If worked < 5 hours, classify as Half-day, else Present
-    const finalStatus = minutes < 300 ? 'Half-day' : 'Present';
+    const finalStatus = minutes < 300 && minutes > 0 ? 'Half-day' : 'Present';
 
     const updated: AttendanceRecord = {
       ...records[index],
@@ -336,7 +288,47 @@ export const attendanceService = {
 
     records[index] = updated;
     saveRecords(records);
+
+    // Sync to Supabase if active
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('attendance').upsert({
+          employee_id: employeeId.toUpperCase(),
+          date: todayDate,
+          check_in: checkInTime,
+          check_out: timeNow,
+          status: finalStatus,
+          notes: `Clocked out at ${timeNow}`,
+        });
+      } catch (err) {
+        console.warn('Supabase attendance sync warning:', err);
+      }
+    }
+
     return updated;
+  },
+
+  /**
+   * Reset punch for testing purposes
+   */
+  async resetTodayPunch(employeeId: string): Promise<AttendanceRecord> {
+    const todayDate = new Date().toISOString().split('T')[0];
+    const records = getStoredRecords();
+    const filtered = records.filter(
+      (r) => !(r.employeeId.toUpperCase() === employeeId.toUpperCase() && r.date === todayDate)
+    );
+    saveRecords(filtered);
+
+    return {
+      id: `att_${employeeId}_${todayDate}`,
+      employeeId: employeeId.toUpperCase(),
+      employeeName: 'Alex Morgan',
+      department: 'Product Engineering',
+      date: todayDate,
+      checkIn: null,
+      checkOut: null,
+      status: 'Absent',
+    };
   },
 
   /**
@@ -352,7 +344,7 @@ export const attendanceService = {
     presentDaysCount: number;
     attendancePercentage: number;
   }> {
-    await delay(150);
+    await delay(120);
     const records = getStoredRecords();
     const weekDates = getWeekDates(weekOffset);
 
@@ -406,7 +398,7 @@ export const attendanceService = {
     records: AttendanceRecord[];
     stats: AttendanceSummaryStats;
   }> {
-    await delay(200);
+    await delay(150);
     let records = getStoredRecords();
 
     // Filter by search (name or ID)
@@ -435,7 +427,6 @@ export const attendanceService = {
       records = records.filter((r) => r.date === filters.date);
     }
 
-    // Calculate Summary Stats
     const totalEmployees = 148;
     const presentToday = records.filter((r) => r.status === 'Present' || r.status === 'Working').length;
     const onLeaveToday = records.filter((r) => r.status === 'Leave').length;

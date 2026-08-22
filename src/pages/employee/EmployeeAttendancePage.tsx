@@ -83,9 +83,12 @@ export const EmployeeAttendancePage: React.FC = () => {
       const startH = parseInt(parts[0], 10) || 9;
       const startM = parseInt(parts[1], 10) || 0;
       const now = new Date();
+      const startTime = new Date();
+      startTime.setHours(startH, startM, 0, 0);
+
       const diffSec = Math.max(
         0,
-        Math.floor((now.getTime() - new Date().setHours(startH, startM, 0, 0)) / 1000)
+        Math.floor((now.getTime() - startTime.getTime()) / 1000)
       );
 
       const h = Math.floor(diffSec / 3600);
@@ -150,6 +153,19 @@ export const EmployeeAttendancePage: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to check out';
       toastError('Check-out Error', msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPunch = async () => {
+    setActionLoading(true);
+    try {
+      const updated = await attendanceService.resetTodayPunch(employeeId);
+      setTodayRecord(updated);
+      setLiveDuration('00h 00m 00s');
+      await loadAttendance();
+      info('Punch Reset', 'Attendance for today has been reset. You can now Clock In.');
     } finally {
       setActionLoading(false);
     }
@@ -252,6 +268,7 @@ export const EmployeeAttendancePage: React.FC = () => {
                 <Button
                   variant="danger"
                   size="md"
+                  className="cursor-pointer"
                   onClick={handleCheckOut}
                   isLoading={actionLoading}
                   leftIcon={<Square className="w-4 h-4" />}
@@ -262,11 +279,23 @@ export const EmployeeAttendancePage: React.FC = () => {
                 <Button
                   variant="success"
                   size="md"
+                  className="cursor-pointer"
                   onClick={handleCheckIn}
                   isLoading={actionLoading}
                   leftIcon={<Play className="w-4 h-4" />}
                 >
                   Clock In to Start Day
+                </Button>
+              )}
+              {todayRecord?.checkOut && !isCheckedIn && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetPunch}
+                  disabled={actionLoading}
+                  className="text-xs text-slate-500 hover:text-indigo-600 cursor-pointer"
+                >
+                  Reset Punch
                 </Button>
               )}
             </div>

@@ -51,13 +51,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             disabled={disabled}
             className={cn(
-              'w-full bg-white border text-sm text-slate-900 placeholder:text-slate-400 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
+              'w-full bg-white/95 border text-sm text-slate-900 placeholder:text-slate-400 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
               leftIcon ? 'pl-10' : 'pl-3.5',
               rightIcon ? 'pr-10' : 'pr-3.5',
               'py-2.5',
               error
                 ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-                : 'border-slate-200 hover:border-slate-300 focus:border-indigo-600 focus:ring-indigo-500/20 shadow-xs',
+                : 'border-slate-200 hover:border-indigo-300 hover:shadow-2xs focus:border-indigo-600 focus:ring-indigo-500/20 shadow-2xs',
               className
             )}
             {...props}

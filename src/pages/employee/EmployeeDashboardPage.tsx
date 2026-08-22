@@ -177,9 +177,12 @@ export const EmployeeDashboardPage: React.FC = () => {
       const startH = parseInt(parts[0], 10) || 9;
       const startM = parseInt(parts[1], 10) || 0;
       const now = new Date();
+      const startTime = new Date();
+      startTime.setHours(startH, startM, 0, 0);
+
       const diffSec = Math.max(
         0,
-        Math.floor((now.getTime() - new Date().setHours(startH, startM, 0, 0)) / 1000)
+        Math.floor((now.getTime() - startTime.getTime()) / 1000)
       );
 
       const h = Math.floor(diffSec / 3600);
@@ -239,6 +242,19 @@ export const EmployeeDashboardPage: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Check-out failed';
       toastError('Check-out Error', msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPunch = async () => {
+    setActionLoading(true);
+    try {
+      const updated = await attendanceService.resetTodayPunch(employeeId);
+      setTodayRecord(updated);
+      setLiveDuration('00h 00m 00s');
+      info('Punch Reset', 'Attendance has been reset for today. You can Clock In now.');
+      await loadDashboardData();
     } finally {
       setActionLoading(false);
     }
@@ -311,19 +327,19 @@ export const EmployeeDashboardPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* 1. Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-indigo-700 text-white p-6 sm:p-8 shadow-xl shadow-indigo-950/10">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-950 via-indigo-900 to-slate-900 border border-indigo-500/30 text-white p-6 sm:p-8 shadow-2xl shadow-black/50">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-xl space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-indigo-100">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-              <span>Dayflow Workplace Portal</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 backdrop-blur-md border border-cyan-500/30 text-xs font-mono text-cyan-300">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <span>Dayflow Telemetry Portal &bull; Live Duty</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
               {getGreeting()}, {user?.name ? user.name.split(' ')[0] : 'Alex'} 👋
             </h1>
-            <p className="text-sm text-indigo-100/90 leading-relaxed">
-              Here's your workday overview. {user?.title} &bull; {user?.department} &bull; ID:{' '}
-              <strong className="text-white font-mono">{user?.employeeId || 'DF-4089'}</strong>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              {user?.title} &bull; {user?.department} &bull; ID:{' '}
+              <strong className="text-cyan-400 font-mono">{user?.employeeId || 'DF-4089'}</strong>
             </p>
           </div>
 
@@ -343,8 +359,8 @@ export const EmployeeDashboardPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="md"
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
-                leftIcon={<Calendar className="w-4 h-4" />}
+                className="bg-slate-900/60 hover:bg-slate-800 text-white border-indigo-500/30 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                leftIcon={<Calendar className="w-4 h-4 text-cyan-400" />}
               >
                 Team Calendar
               </Button>
@@ -359,19 +375,19 @@ export const EmployeeDashboardPage: React.FC = () => {
       {/* 2. 4 Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Attendance Today */}
-        <Card className="hover:border-indigo-200 transition-all p-5">
+        <Card className="hover:border-emerald-500/50 hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Attendance Today</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Attendance Today</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
               <CalendarCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-2xl font-black text-white">
               {isCheckedIn ? 'Working' : todayRecord?.status || 'Not Checked In'}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-slate-500 font-mono">
+              <span className="text-xs text-slate-400 font-mono">
                 {todayRecord?.checkIn ? `Checked in: ${todayRecord.checkIn}` : 'Pending morning punch'}
               </span>
               {isCheckedIn && <Badge variant="success" size="xs" dot>Live</Badge>}
@@ -380,20 +396,20 @@ export const EmployeeDashboardPage: React.FC = () => {
         </Card>
 
         {/* Card 2: Working Hours */}
-        <Card className="hover:border-indigo-200 transition-all p-5">
+        <Card className="hover:border-cyan-500/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.2)] transition-all p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Working Hours</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Working Hours</span>
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
               <Clock className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black font-mono text-indigo-700">
+            <p className="text-2xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]">
               {isCheckedIn
                 ? liveDuration
                 : calculateWorkingHoursString(todayRecord?.checkIn || null, todayRecord?.checkOut || null, todayRecord?.status)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               {isCheckedIn ? 'Running active workday ticker' : 'Expected standard: 08h 00m'}
             </p>
           </div>
@@ -401,16 +417,16 @@ export const EmployeeDashboardPage: React.FC = () => {
 
         {/* Card 3: Leave Balance */}
         <Link to="/employee/leave" className="block group">
-          <Card className="hover:border-indigo-300 transition-all p-5 h-full">
+          <Card className="hover:border-indigo-500/50 hover:shadow-[0_0_25px_rgba(99,102,241,0.2)] transition-all p-5 h-full">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Leave Balance</span>
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Leave Balance</span>
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
                 <Plane className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-2xl font-black text-slate-900">{leaveBalances.annualPaid} Days</p>
-              <p className="text-xs text-indigo-600 font-semibold group-hover:underline mt-1">
+              <p className="text-2xl font-black text-white">{leaveBalances.annualPaid} Days</p>
+              <p className="text-xs text-cyan-400 font-semibold group-hover:underline mt-1">
                 {leaveBalances.sick} sick days available &rarr;
               </p>
             </div>
@@ -419,19 +435,19 @@ export const EmployeeDashboardPage: React.FC = () => {
 
         {/* Card 4: Pending Leave Requests */}
         <Link to="/employee/leave" className="block group">
-          <Card className="hover:border-amber-300 transition-all p-5 h-full">
+          <Card className="hover:border-amber-500/50 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] transition-all p-5 h-full">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Requests</span>
-              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Pending Requests</span>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
                 <Sparkles className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-center gap-2">
-                <p className="text-2xl font-black text-slate-900">{pendingRequestsCount}</p>
+                <p className="text-2xl font-black text-white">{pendingRequestsCount}</p>
                 {pendingRequestsCount > 0 && <Badge variant="warning" size="xs">In Review</Badge>}
               </div>
-              <p className="text-xs text-amber-600 font-semibold group-hover:underline mt-1">
+              <p className="text-xs text-amber-400 font-semibold group-hover:underline mt-1">
                 Awaiting HR manager decision &rarr;
               </p>
             </div>
@@ -442,11 +458,11 @@ export const EmployeeDashboardPage: React.FC = () => {
       {/* 3. Interactive Attendance Widget & Leave Quotas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Attendance Action Widget */}
-        <Card className="border-indigo-100/90 shadow-md">
+        <Card className="border-indigo-500/30 shadow-2xl">
           <CardHeader>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-cyan-400 flex items-center justify-center">
                   <Clock className="w-4 h-4" />
                 </div>
                 <CardTitle className="text-sm">Attendance Widget</CardTitle>
@@ -458,24 +474,24 @@ export const EmployeeDashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Live timer display box */}
-            <div className="text-center p-6 rounded-2xl bg-slate-50/90 border border-slate-200/80">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="text-center p-6 rounded-2xl bg-slate-950/80 border border-indigo-500/30 shadow-inner">
+              <p className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                 {isCheckedIn ? 'Elapsed Working Time' : 'Session Duration'}
               </p>
-              <p className="text-3xl sm:text-4xl font-mono font-black text-slate-900 mt-2 tracking-tight">
+              <p className="text-3xl sm:text-4xl font-mono font-black text-cyan-400 mt-2 tracking-tight drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
                 {isCheckedIn
                   ? liveDuration
                   : todayRecord?.checkOut
                   ? calculateWorkingHoursString(todayRecord.checkIn, todayRecord.checkOut, todayRecord.status)
                   : '00h 00m 00s'}
               </p>
-              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-600 font-medium">
+              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-400 font-mono">
                 <span>
-                  Check In: <strong className="text-slate-900 font-mono">{todayRecord?.checkIn || '--:--'}</strong>
+                  Check In: <strong className="text-white font-mono">{todayRecord?.checkIn || '--:--'}</strong>
                 </span>
                 <span>&bull;</span>
                 <span>
-                  Check Out: <strong className="text-slate-900 font-mono">{todayRecord?.checkOut || (isCheckedIn ? 'In Progress' : '--:--')}</strong>
+                  Check Out: <strong className="text-white font-mono">{todayRecord?.checkOut || (isCheckedIn ? 'In Progress' : '--:--')}</strong>
                 </span>
               </div>
             </div>
@@ -485,7 +501,7 @@ export const EmployeeDashboardPage: React.FC = () => {
               <Button
                 variant="danger"
                 size="lg"
-                className="w-full justify-center shadow-md shadow-rose-200"
+                className="w-full justify-center shadow-md shadow-rose-200 cursor-pointer"
                 onClick={handleCheckOut}
                 isLoading={actionLoading}
                 leftIcon={<Square className="w-4 h-4" />}
@@ -496,13 +512,24 @@ export const EmployeeDashboardPage: React.FC = () => {
               <Button
                 variant="success"
                 size="lg"
-                className="w-full justify-center shadow-md shadow-emerald-200"
+                className="w-full justify-center shadow-md shadow-emerald-200 cursor-pointer"
                 onClick={handleCheckIn}
                 isLoading={actionLoading}
                 leftIcon={<Play className="w-4 h-4" />}
               >
-                Check In to Start Work
+                Clock In to Start Day
               </Button>
+            )}
+
+            {todayRecord?.checkOut && !isCheckedIn && (
+              <button
+                type="button"
+                onClick={handleResetPunch}
+                disabled={actionLoading}
+                className="w-full py-1.5 text-center text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
+              >
+                ↻ Reset today's punch (Test Clock In again)
+              </button>
             )}
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">

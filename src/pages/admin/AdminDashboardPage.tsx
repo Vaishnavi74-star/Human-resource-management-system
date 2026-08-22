@@ -294,18 +294,18 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* 1. Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-indigo-700 text-white p-6 sm:p-8 shadow-xl shadow-indigo-950/10">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-purple-950 via-indigo-950 to-slate-900 border border-indigo-500/30 text-white p-6 sm:p-8 shadow-2xl shadow-black/50">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-xl space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-indigo-100">
-              <Shield className="w-3.5 h-3.5 text-indigo-300" />
-              <span>HR & Workforce Management Console</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 backdrop-blur-md border border-cyan-500/30 text-xs font-mono text-cyan-300">
+              <Shield className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <span>Executive Command Console &bull; Telemetry Active</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
-              Organization Overview 👋
+              Organization Command 👋
             </h1>
-            <p className="text-sm text-indigo-100/90 leading-relaxed">
-              Every workday, perfectly aligned. Monitoring 105 active employees across 5 departments.
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Every workday, hyper-aligned. Real-time telemetry monitoring 105 active personnel across 5 departments.
             </p>
           </div>
 
@@ -316,14 +316,14 @@ export const AdminDashboardPage: React.FC = () => {
               onClick={newHireModal.open}
               leftIcon={<Plus className="w-4 h-4 text-indigo-600" />}
             >
-              Onboard Employee
+              Onboard Staff
             </Button>
             <Link to="/calendar">
               <Button
                 variant="outline"
                 size="md"
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
-                leftIcon={<Calendar className="w-4 h-4" />}
+                className="bg-slate-900/60 hover:bg-slate-800 text-white border-indigo-500/30 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                leftIcon={<Calendar className="w-4 h-4 text-cyan-400" />}
               >
                 Workforce Calendar
               </Button>
@@ -331,9 +331,9 @@ export const AdminDashboardPage: React.FC = () => {
             <Button
               variant="outline"
               size="md"
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
+              className="bg-slate-900/60 hover:bg-slate-800 text-white border-indigo-500/30 hover:border-indigo-400"
               onClick={() => info('Export Payroll', 'Exporting August payroll compliance ledger.')}
-              leftIcon={<Download className="w-4 h-4" />}
+              leftIcon={<Download className="w-4 h-4 text-purple-400" />}
             >
               Export
             </Button>
@@ -347,82 +347,82 @@ export const AdminDashboardPage: React.FC = () => {
       {/* 2. 6 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Card 1: Total Employees */}
-        <Card className="p-4 hover:border-indigo-300 transition-all">
+        <Card className="p-4 hover:border-indigo-500/50 hover:shadow-[0_0_25px_rgba(99,102,241,0.2)] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Staff</span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Total Staff</span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">105</p>
-          <div className="flex items-center gap-1 mt-1 text-[11px] text-emerald-600 font-semibold">
+          <p className="text-2xl font-black font-mono text-white mt-2">105</p>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-emerald-400 font-semibold">
             <TrendingUp className="w-3 h-3" />
             <span>5 Depts Active</span>
           </div>
         </Card>
 
         {/* Card 2: Present Today */}
-        <Card className="p-4 hover:border-emerald-300 transition-all">
+        <Card className="p-4 hover:border-emerald-500/50 hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Present Today</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Present Today</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
               <CalendarCheck className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">92</p>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-1">87.6% attendance</p>
+          <p className="text-2xl font-black font-mono text-emerald-400 mt-2">92</p>
+          <p className="text-[11px] text-emerald-400 font-semibold mt-1">87.6% on duty</p>
         </Card>
 
         {/* Card 3: Absent Today */}
-        <Card className="p-4 hover:border-rose-300 transition-all">
+        <Card className="p-4 hover:border-rose-500/50 hover:shadow-[0_0_25px_rgba(244,63,94,0.2)] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Absent Today</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Absent Today</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center">
               <UserX className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">4</p>
-          <p className="text-[11px] text-rose-600 font-semibold mt-1">3.8% unplanned</p>
+          <p className="text-2xl font-black font-mono text-rose-400 mt-2">4</p>
+          <p className="text-[11px] text-rose-400 font-semibold mt-1">3.8% unplanned</p>
         </Card>
 
         {/* Card 4: On Leave */}
-        <Card className="p-4 hover:border-purple-300 transition-all">
+        <Card className="p-4 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">On Leave</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">On Leave</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center">
               <Plane className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">6</p>
-          <p className="text-[11px] text-purple-600 font-semibold mt-1">Approved time-off</p>
+          <p className="text-2xl font-black font-mono text-purple-400 mt-2">6</p>
+          <p className="text-[11px] text-purple-400 font-semibold mt-1">Approved time-off</p>
         </Card>
 
         {/* Card 5: Pending Leave Requests */}
         <Link to="/admin/leave" className="block group">
-          <Card className="p-4 hover:border-amber-300 transition-all h-full">
+          <Card className="p-4 hover:border-amber-500/50 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] transition-all h-full">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Leaves</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Pending Leaves</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900 mt-2">{pendingLeaves.length}</p>
-            <p className="text-[11px] text-amber-600 font-semibold group-hover:underline mt-1">
+            <p className="text-2xl font-black font-mono text-amber-400 mt-2">{pendingLeaves.length}</p>
+            <p className="text-[11px] text-amber-400 font-semibold group-hover:underline mt-1">
               Action required &rarr;
             </p>
           </Card>
         </Link>
 
         {/* Card 6: Payroll Status */}
-        <Card className="p-4 hover:border-blue-300 transition-all">
+        <Card className="p-4 hover:border-cyan-500/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.2)] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payroll Status</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">Payroll Status</span>
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">$428.5k</p>
-          <p className="text-[11px] text-slate-500 font-semibold mt-1">August Batch: Ready</p>
+          <p className="text-2xl font-black font-mono text-cyan-400 mt-2">$428.5k</p>
+          <p className="text-[11px] text-slate-400 font-semibold mt-1">August Batch: Ready</p>
         </Card>
       </div>
 
@@ -438,19 +438,19 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
 
               {/* Timeframe Filter Switcher */}
-              <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+              <div className="inline-flex p-1 bg-slate-950/80 rounded-xl border border-indigo-500/30 self-start sm:self-auto">
                 {(['today', 'week', 'month'] as const).map((period) => (
                   <button
                     key={period}
                     type="button"
                     onClick={() => setAttendancePeriod(period)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all capitalize ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all capitalize cursor-pointer ${
                       attendancePeriod === period
-                        ? 'bg-white text-indigo-700 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-linear-to-r from-indigo-600 to-cyan-500 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    {period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month'}
+                    {period}
                   </button>
                 ))}
               </div>

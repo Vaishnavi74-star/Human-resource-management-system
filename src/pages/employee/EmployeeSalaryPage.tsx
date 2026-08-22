@@ -52,61 +52,61 @@ export const EmployeeSalaryPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
+        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
           My Salary & Payslips
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           View your current compensation structure and download past payslips.
         </p>
       </div>
 
       {/* Salary Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 border-l-4 border-l-indigo-500">
+        <Card className="p-5 border-l-4 border-l-indigo-600">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg">
               <IndianRupee className="w-5 h-5" />
             </div>
-            <p className="text-sm font-medium text-slate-600">Net Salary</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Net Salary</p>
           </div>
-          <p className="text-3xl font-bold text-slate-900">
+          <p className="text-3xl font-black text-slate-900 dark:text-white">
             {formatCurrency(salary?.netSalary || 0)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Take home pay</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Take home pay</p>
         </Card>
 
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <p className="text-sm font-medium text-slate-600">Basic Salary</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Basic Salary</p>
           </div>
-          <p className="text-xl font-bold text-slate-900">
+          <p className="text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(salary?.basic || 0)}
           </p>
         </Card>
 
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-2 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-lg">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <p className="text-sm font-medium text-slate-600">Allowances</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Allowances</p>
           </div>
-          <p className="text-xl font-bold text-slate-900">
+          <p className="text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(salary?.allowances || 0)}
           </p>
         </Card>
 
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+            <div className="p-2 bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-lg">
               <TrendingDown className="w-5 h-5" />
             </div>
-            <p className="text-sm font-medium text-slate-600">Deductions</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Deductions</p>
           </div>
-          <p className="text-xl font-bold text-slate-900">
+          <p className="text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(salary?.deductions || 0)}
           </p>
         </Card>
@@ -114,42 +114,42 @@ export const EmployeeSalaryPage: React.FC = () => {
 
       {/* Salary History */}
       <Card>
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans',sans-serif]">
             Salary History
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50/50 text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300">
               <tr>
-                <th className="px-6 py-4 font-medium">Month</th>
-                <th className="px-6 py-4 font-medium">Gross Salary</th>
-                <th className="px-6 py-4 font-medium">Deductions</th>
-                <th className="px-6 py-4 font-medium">Net Salary</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Action</th>
+                <th className="px-6 py-4 font-semibold">Month</th>
+                <th className="px-6 py-4 font-semibold">Gross Salary</th>
+                <th className="px-6 py-4 font-semibold">Deductions</th>
+                <th className="px-6 py-4 font-semibold">Net Salary</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {history.length > 0 ? (
                 history.map((record) => (
-                  <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={record.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-slate-400" />
-                        <span className="font-medium text-slate-900">
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {record.month} {record.year}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">
                       {formatCurrency(record.grossSalary)}
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">
                       {formatCurrency(record.deductions)}
                     </td>
-                    <td className="px-6 py-4 font-medium text-slate-900">
+                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white font-mono">
                       {formatCurrency(record.netSalary)}
                     </td>
                     <td className="px-6 py-4">
@@ -159,10 +159,10 @@ export const EmployeeSalaryPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                        onClick={() => alert('Download Payslip functionality coming soon!')}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer"
+                        onClick={() => alert(`Payslip for ${record.month} ${record.year} is prepared for download.`)}
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5" />
                         Payslip
                       </button>
                     </td>

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark-theme (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @layer base {
   :root {
     --color-primary-50: #eef2ff;
@@ -20,6 +23,13 @@
     --color-text-muted: #64748b;
   }
 
+  html.dark, html[data-theme="dark"] {
+    --color-surface-bg: #090d1a;
+    --color-card-bg: #0f172a;
+    --color-text-main: #f8fafc;
+    --color-text-muted: #94a3b8;
+  }
+
   body {
     background-color: var(--color-surface-bg);
     color: var(--color-text-main);
@@ -29,22 +39,209 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  html.dark body, body.dark {
+    background-color: #090d1a !important;
+    color: #f8fafc !important;
   }
 }
 
-/* Simple Dark Mode via CSS Filter */
-html.dark {
-  filter: invert(1) hue-rotate(180deg);
-  background-color: #111;
-}
-html.dark img, 
-html.dark video, 
-html.dark .avatar, 
-html.dark [style*="background-image"] {
-  filter: invert(1) hue-rotate(180deg);
+/* ==========================================================================
+   GLITTER, SPARKLE, SHIMMER & HIGH-POWER INTERACTION EFFECTS
+   ========================================================================== */
+
+@keyframes glitter-sweep {
+  0% {
+    background-position: -200% 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    background-position: 200% 0;
+    opacity: 0;
+  }
 }
 
-/* Custom Scrollbar */
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2) rotate(45deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.9));
+  }
+}
+
+@keyframes power-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px 4px rgba(99, 102, 241, 0.65);
+  }
+}
+
+@keyframes click-burst {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 35px 8px rgba(6, 182, 212, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* Shimmer Light Sweeper on Interactive Elements */
+.glitter-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.glitter-hover::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(99, 102, 241, 0.4) 50%,
+    rgba(6, 182, 212, 0.45) 55%,
+    rgba(255, 255, 255, 0.35) 60%,
+    transparent 80%
+  );
+  transform: rotate(25deg) translateY(-100%);
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitter-hover:hover::after {
+  transform: rotate(25deg) translateY(100%);
+  opacity: 1;
+}
+
+.glitter-hover:active {
+  animation: click-burst 0.3s ease-out;
+}
+
+/* High-Power Radiant Buttons */
+.btn-futuristic-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #4338ca 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 15px 0 rgba(99, 102, 241, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-futuristic-primary:hover {
+  transform: translateY(-2.5px) scale(1.02);
+  box-shadow: 0 10px 30px -4px rgba(99, 102, 241, 0.6), 0 0 20px 2px rgba(6, 182, 212, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-futuristic-primary:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 0 25px 5px rgba(99, 102, 241, 0.8);
+}
+
+.btn-futuristic-success {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 15px 0 rgba(16, 185, 129, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-futuristic-success:hover {
+  transform: translateY(-2.5px) scale(1.02);
+  box-shadow: 0 10px 30px -4px rgba(16, 185, 129, 0.6), 0 0 20px 2px rgba(52, 211, 153, 0.5);
+}
+
+.btn-futuristic-success:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn-futuristic-danger {
+  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 50%, #be123c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 15px 0 rgba(244, 63, 94, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-futuristic-danger:hover {
+  transform: translateY(-2.5px) scale(1.02);
+  box-shadow: 0 10px 30px -4px rgba(244, 63, 94, 0.6), 0 0 20px 2px rgba(251, 113, 133, 0.5);
+}
+
+.btn-futuristic-danger:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Image & Box Glitter Frames */
+.img-glitter-card {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.img-glitter-card:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 20px 35px -10px rgba(99, 102, 241, 0.25), 0 0 25px rgba(6, 182, 212, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Subtle Modern Cyber Grids & Backgrounds */
+.bg-cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+}
+
+.bg-cyber-grid-dark {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+}
+
+/* 3D Perspective Containers */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.tilt-3d {
+  transform: rotateX(8deg) rotateY(-2deg) rotateZ(1deg);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tilt-3d:hover {
+  transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.015);
+}
+
+/* Custom Clean Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -58,4 +255,65 @@ html.dark [style*="background-image"] {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Direct Dark Mode Styling Rules for Comprehensive Theme Switching */
+html.dark .bg-white,
+html[data-theme="dark"] .bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+html.dark .bg-slate-50,
+html[data-theme="dark"] .bg-slate-50 {
+  background-color: #0b1120 !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-900,
+html[data-theme="dark"] .text-slate-900 {
+  color: #ffffff !important;
+}
+
+html.dark .text-slate-800,
+html[data-theme="dark"] .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html[data-theme="dark"] .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-600,
+html[data-theme="dark"] .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html[data-theme="dark"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-slate-200,
+html[data-theme="dark"] .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+html.dark .border-slate-100,
+html[data-theme="dark"] .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+html.dark aside,
+html[data-theme="dark"] aside {
+  background-color: #0a0f1e !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+html.dark header,
+html[data-theme="dark"] header {
+  background-color: rgba(10, 15, 30, 0.95) !important;
+  border-color: rgba(99, 102, 241, 0.2) !important;
 }
